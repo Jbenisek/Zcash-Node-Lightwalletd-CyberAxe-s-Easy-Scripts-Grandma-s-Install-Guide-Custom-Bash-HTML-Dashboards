@@ -100,6 +100,7 @@ Features:
 - Live log streaming
 - Beautiful ASCII dashboard
 - HTML visual monitor (press 'M' to open)
+- http://192.168.1.230:4242/Zcash%20Node%20Dashboard.html (Where 192.168.1.230 is your node LAN static IP, you can also setup for public access by port forwarding 4242 to this static IP in your router, then using your domain http://zcash.dontpanic.biz:4242/Zcash%20Node%20Dashboard.html, where zcash.dontpanic.biz is your domain)
 
 ---
 
@@ -125,11 +126,10 @@ This generates a detailed report including:
 
 ✅ **Automated Multi-Component Deployment** - Handles all 7 steps automatically  
 ✅ **Optional Donation Address** - Advertise your UA to wallet clients  
-✅ **Real-Time Monitoring Dashboard** - Track sync progress and node health  
+✅ **Real-Time Monitoring Dashboard** - Track sync progress and node health with Webserver setup for Lan Access on Port 4242 
 ✅ **Automatic TLS/HTTPS** - Let's Encrypt certificates with Caddy  
 ✅ **Data Preservation** - Protects blockchain data during reinstalls  
-✅ **Production Ready** - Battle-tested with comprehensive QA audit  
-✅ **Non-Breaking Updates** - Safely update with re-runs  
+✅ *?Production Ready?* - Battle-tested with comprehensive QA audit (AI Speak for Watch out, it should work)  
 ✅ **Grandma-Friendly** - Clear prompts and error handling for all users  
 
 ---
@@ -164,6 +164,8 @@ sudo systemctl restart caddy
 - **UFW Firewall**: Automatically configured for required ports
 - **File Permissions**: Restrictive (600) on sensitive configuration files
 - **Static IP**: Recommended for stable port forwarding
+- **Web Hosts** LAN Webserver on Port 4242 for Monitoring HTML, make accessable to work by portforwarding 4242 to static IP
+- http://192.168.1.230:4242/Zcash%20Node%20Dashboard.html
 
 ---
 
@@ -209,5 +211,6 @@ This project is open-source under MIT Lic. See LICENSE file for details.
 **Last Updated: November 6, 2025**
 
 Welcome to the Zcash network! 🦓🔒
+
 
 
