@@ -1,4 +1,4 @@
-# Zecnode - Automated Zcash Full Node Installation System
+# CyberAxe's Easy Grandma's Zecnode Installer - Automated Zcash Full Node Installation System
 
 ## 🦓 About the Project
 
@@ -204,3 +204,4 @@ This project is open-source under MIT Lic. See LICENSE file for details.
 **Last Updated: November 6, 2025**
 
 Welcome to the Zcash network! 🦓🔒
+
