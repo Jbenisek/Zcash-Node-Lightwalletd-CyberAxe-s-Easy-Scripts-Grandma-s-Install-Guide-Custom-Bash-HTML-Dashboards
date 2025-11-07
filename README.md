@@ -35,6 +35,11 @@ Your donations help maintain this project and support future development!
 
 ---
 
+I made a Video Guide https://youtu.be/MxyBHwOCeHs - Here to help you along your way
+
+
+---
+
 ## ⚠️ Special Note to AI Coders
 
 > *It took the lives of countless (40) feral AI to make this project work over 3 weeks of hell. Please pour one out for the few good ones that got this done.*
@@ -204,4 +209,5 @@ This project is open-source under MIT Lic. See LICENSE file for details.
 **Last Updated: November 6, 2025**
 
 Welcome to the Zcash network! 🦓🔒
+
 
