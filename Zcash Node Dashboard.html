@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zcash Node Dashboard</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: black;
+            color: #FFD700;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        #overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 10;
+            color: #FFD700;
+            text-shadow: 0 0 10px #FFD700;
+        }
+        #overlay h1 {
+            font-size: 3em;
+            margin: 0;
+        }
+        #overlay p {
+            font-size: 1.5em;
+        }
+        #dynamicButton {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #FFD700;
+            border: 2px solid #FFD700;
+            padding: 10px 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            cursor: pointer;
+            z-index: 20;
+            text-shadow: 0 0 5px #FFD700;
+        }
+        #audioButton {
+            position: absolute;
+            top: 70px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #FFD700;
+            border: 2px solid #FFD700;
+            padding: 10px 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            cursor: pointer;
+            z-index: 20;
+            text-shadow: 0 0 5px #FFD700;
+        }
+        #effectButton {
+            position: absolute;
+            top: 120px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #FFD700;
+            border: 2px solid #FFD700;
+            padding: 10px 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            cursor: pointer;
+            z-index: 20;
+            text-shadow: 0 0 5px #FFD700;
+        }
+        #matrixToggle {
+            position: absolute;
+            top: 170px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #FFD700;
+            border: 2px solid #FFD700;
+            padding: 10px 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            cursor: pointer;
+            z-index: 20;
+            text-shadow: 0 0 5px #FFD700;
+        }
+        #statsDisplay {
+            position: absolute;
+            top: 220px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #FFD700;
+            border: 2px solid #FFD700;
+            padding: 10px 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            z-index: 20;
+            text-shadow: 0 0 5px #FFD700;
+            line-height: 1.4;
+        }
+        #lastUpdated {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #FFD700;
+            border: 2px solid #FFD700;
+            padding: 10px 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            z-index: 20;
+            text-shadow: 0 0 5px #FFD700;
+        }
+        #networkDataBox {
+            position: absolute;
+            top: 65px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #00CCFF;
+            border: 2px solid #00FF00;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            z-index: 20;
+            text-shadow: 0 0 5px #00FF00;
+            max-width: 400px;
+            line-height: 1.6;
+        }
+        #networkDataBox .header {
+            color: #00FF00;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        #networkDataBox .row {
+            margin: 4px 0;
+            color: #00CCFF;
+        }
+        #networkDataBox .value {
+            color: #FFD700;
+            font-weight: bold;
+        }
+        #systemdServicesBox {
+            position: absolute;
+            top: 286px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #00CCFF;
+            border: 2px solid #FFD700;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            z-index: 20;
+            text-shadow: 0 0 5px #FFD700;
+            max-width: 450px;
+            line-height: 1.6;
+        }
+        #systemdServicesBox .header {
+            color: #FFD700;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        #systemdServicesBox .row {
+            margin: 3px 0;
+            color: #00CCFF;
+        }
+        #systemdServicesBox .status-active {
+            color: #00FF00;
+            font-weight: bold;
+        }
+        #systemdServicesBox .status-inactive {
+            color: #FF0000;
+            font-weight: bold;
+        }
+        #networkAccessBox {
+            position: absolute;
+            top: 482px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #00CCFF;
+            border: 2px solid #00CCFF;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            z-index: 20;
+            text-shadow: 0 0 5px #00CCFF;
+            max-width: 400px;
+            line-height: 1.6;
+        }
+        #networkAccessBox .header {
+            color: #00CCFF;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        #networkAccessBox .row {
+            margin: 3px 0;
+            color: #00CCFF;
+        }
+        #networkAccessBox .value {
+            color: #FFD700;
+            font-weight: bold;
+        }
+        #networkAccessBox.ip-alarm {
+            animation: blinkRed 0.5s infinite;
+            border-color: #FF0000;
+        }
+        @keyframes blinkRed {
+            0% {
+                border-color: #FF0000;
+                background: rgba(255, 0, 0, 0.1);
+                box-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
+            }
+            50% {
+                border-color: #CC0000;
+                background: rgba(255, 0, 0, 0.05);
+                box-shadow: 0 0 20px rgba(255, 0, 0, 0.7);
+            }
+            100% {
+                border-color: #FF0000;
+                background: rgba(255, 0, 0, 0.1);
+                box-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
+            }
+        }
+        #nodeHealthBox {
+            position: absolute;
+            top: 614px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #00CCFF;
+            border: 2px solid #00FF00;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            z-index: 20;
+            text-shadow: 0 0 5px #00FF00;
+            max-width: 350px;
+            line-height: 1.6;
+        }
+        #nodeHealthBox .header {
+            color: #00FF00;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        #nodeHealthBox .row {
+            margin: 3px 0;
+            color: #00CCFF;
+        }
+        #nodeHealthBox .status-check {
+            color: #00FF00;
+            font-weight: bold;
+        }
+        #nodeHealthBox .value {
+            color: #FFD700;
+            font-weight: bold;
+        }
+        #asciiArtBackground {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+            opacity: 0.25;
+            overflow: hidden;
+            font-family: monospace;
+            font-size: 16px;
+            line-height: 1;
+            white-space: pre;
+            pointer-events: none;
+        }
+        #liveLogsBox {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            left: auto;
+            background: rgba(0, 0, 0, 0.8);
+            color: #00CCFF;
+            border: 2px solid #00CCFF;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            z-index: 20;
+            text-shadow: 0 0 5px #00CCFF;
+            line-height: 1.4;
+            width: calc(100% - 500px);
+            max-width: 900px;
+            min-width: 400px;
+        }
+        #logsToggleBtn {
+            background: rgba(0, 0, 0, 0.8);
+            color: #FFD700;
+            border: 2px solid #00CCFF;
+            padding: 8px 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 21;
+            text-shadow: 0 0 5px #00CCFF;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: calc(100% - 500px);
+            max-width: 900px;
+            min-width: 400px;
+            text-align: left;
+            transition: all 0.3s ease;
+        }
+        #logsToggleBtn:hover {
+            background: rgba(0, 0, 0, 0.9);
+            text-shadow: 0 0 10px #FFD700;
+        }
+        #logContainer {
+            background: rgba(0, 0, 0, 0.8);
+            color: #00CCFF;
+            border: 2px solid #00CCFF;
+            border-top: none;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            z-index: 20;
+            text-shadow: 0 0 5px #00CCFF;
+            line-height: 1.4;
+            position: fixed;
+            bottom: 55px;
+            right: 20px;
+            left: auto;
+            width: calc(100% - 500px);
+            max-width: 900px;
+            min-width: 400px;
+            height: 180px;
+            overflow-y: auto;
+            max-height: 200px;
+            margin-top: -2px;
+            transition: all 0.3s ease;
+        }
+        #logContainer.collapsed {
+            display: none;
+        }
+        #logContainer .logline {
+            margin: 2px 0;
+            color: #00CCFF;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        audio {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="matrix"></canvas>
+    <div id="lastUpdated">
+        Last Updated: <span id="timestampDisplay">--</span>
+    </div>
+    <div id="networkDataBox">
+        <div class="header">NETWORK</div>
+        <div class="row">Known Peers: <span class="value" id="peerCount">--</span></div>
+        <div class="row">Connections/hr: <span class="value" id="connectionsHr">--</span></div>
+        <div class="row">Changes/hr (avg): <span class="value" id="changesHr">--</span></div>
+        <div class="row">CPU Usage: <span class="value" id="cpuUsage">--</span></div>
+        <div class="row">RAM Usage: <span class="value" id="ramUsage">--</span></div>
+        <div class="row">Disk Free: <span class="value" id="diskFree">--</span></div>
+        <div class="row">Block Files: <span class="value" id="blockFiles">--</span></div>
+    </div>
+    <div id="systemdServicesBox">
+        <div class="header">SYSTEMD SERVICES</div>
+        <div class="row">Zebra Node: <span class="status-active" id="zebraStatus">active</span>     Block: <span class="value" id="blockNum">--</span></div>
+        <div class="row">Lightwalletd: <span class="status-active" id="lightwalletdStatus">active</span></div>
+        <div class="row">Caddy (TLS): <span class="status-active" id="caddyStatus">active</span></div>
+        <div class="row">Network Type: <span class="value" id="netType">--</span></div>
+        <div class="row">Sync Timeout: <span class="value" id="syncTimeout">--</span></div>
+        <div class="row">Remaining Sync: <span class="value" id="remainingSync">--</span> blocks</div>
+    </div>
+    <div id="networkAccessBox">
+        <div class="header">NETWORK ACCESS</div>
+        <div class="row">Domain: <span class="value" id="domain">--</span></div>
+        <div class="row">DNS IP: <span class="value" id="dnsIP">--</span></div>
+        <div class="row">Public IP: <span class="value" id="publicIP">--</span></div>
+    </div>
+    <div id="nodeHealthBox">
+        <div class="header">NODE HEALTH</div>
+        <div class="row"><span class="status-check">✓</span> <span id="syncStatus">Fully Synchronized</span></div>
+        <div class="row">Last Block: <span class="value" id="lastBlockTime">--</span></div>
+    </div>
+    <div id="liveLogsBox">
+        <button id="logsToggleBtn">▶ Recent Logs</button>
+        <div id="logContainer" class="collapsed"></div>
+    </div>
+    <button id="dynamicButton">BEAT: RETRO</button>
+    <button id="audioButton">AUDIO: ON</button>
+    <button id="effectButton">EFFECT: MAGNETIC</button>
+    <button id="matrixToggle">MATRIX: OFF</button>
+    <div id="statsDisplay">
+        <div>FPS: <span id="fpsCounter">0</span></div>
+        <div>Memory: <span id="memoryCounter">0</span> MB</div>
+        <div>Particles: <span id="particlesCounter">100</span></div>
+    </div>
+    <div id="asciiArtBackground"><span style="color:#233239"> </span><span style="color:#223239"> </span><span style="color:#23343b"> </span><span style="color:#23343b"> </span><span style="color:#24353c"> </span><span style="color:#23363d"> </span><span style="color:#24363e"> </span><span style="color:#243841"> </span><span style="color:#253e45"> </span><span style="color:#26454f"> </span><span style="color:#254550"> </span><span style="color:#20414a"> </span><span style="color:#1e3e48"> </span><span style="color:#21434d"> </span><span style="color:#244d58">░</span><span style="color:#26535e">░</span><span style="color:#26555f">░</span><span style="color:#275963">░</span><span style="color:#237984">░</span><span style="color:#24ccd4">▒</span><span style="color:#2fe5e9">▒</span><span style="color:#24cbd3">▒</span><span style="color:#2995a3">░</span><span style="color:#2f899b">░</span><span style="color:#308b9e">░</span><span style="color:#2f8c9e">░</span><span style="color:#318c9f">░</span><span style="color:#318ea0">░</span><span style="color:#308ea0">░</span><span style="color:#318ea0">░</span><span style="color:#3290a2">░</span><span style="color:#3390a2">░</span><span style="color:#3291a4">░</span><span style="color:#3292a6">░</span><span style="color:#3292a6">░</span><span style="color:#3394a7">░</span><span style="color:#3394a7">░</span><span style="color:#3295a8">░</span><span style="color:#3497aa">░</span><span style="color:#3599ab">░</span><span style="color:#369bae">░</span><span style="color:#379eb1">▒</span><span style="color:#38a2b5">▒</span><span style="color:#39a8b8">▒</span><span style="color:#6be4e4">▓</span><span style="color:#d5fefd">▓</span><span style="color:#fbfefd">▓</span><span style="color:#fcfefd">▓</span><span style="color:#fbfdfc">▓</span><span style="color:#e8fdfd">▓</span><span style="color:#94f6f4">▓</span><span style="color:#3caebd">▒</span><span style="color:#38a0b3">▒</span><span style="color:#389cae">▒</span><span style="color:#3996a7">░</span><span style="color:#5a8fa1">▒</span><span style="color:#e69bac">▒</span><span style="color:#fbd3d6">▓</span><span style="color:#fcdcde">▓</span><span style="color:#f1aab5">▓</span><span style="color:#917487">░</span><span style="color:#29606d">░</span><span style="color:#286876">░</span><span style="color:#24626e">░</span><span style="color:#1f4e5b">░</span><span style="color:#1d4a57"> </span><span style="color:#1c4652"> </span><span style="color:#1d4550"> </span><span style="color:#1d4854"> </span><span style="color:#1f4b56"> </span><span style="color:#20535f">░</span><span style="color:#24606a">░</span><span style="color:#21515b">░</span><span style="color:#1e3e47"> </span><span style="color:#1d3a43"> </span><span style="color:#1b3840"> </span><span style="color:#19343b"> </span><span style="color:#183137"> </span><span style="color:#183137"> </span><span style="color:#153037"> </span><br><span style="color:#2b353b"> </span><span style="color:#2d383e"> </span><span style="color:#2d3840"> </span><span style="color:#2e3a42"> </span><span style="color:#2e3c43"> </span><span style="color:#2e3c44"> </span><span style="color:#2d3d45"> </span><span style="color:#2b3e45"> </span><span style="color:#2a414b"> </span><span style="color:#2a4751"> </span><span style="color:#274751"> </span><span style="color:#21414c"> </span><span style="color:#20414b"> </span><span style="color:#234550"> </span><span style="color:#27505c">░</span><span style="color:#295661">░</span><span style="color:#285863">░</span><span style="color:#285b67">░</span><span style="color:#25848e">░</span><span style="color:#34d8dd">▒</span><span style="color:#47eff0">▒</span><span style="color:#34d8db">▒</span><span style="color:#2c9ba9">░</span><span style="color:#318d9f">░</span><span style="color:#328fa1">░</span><span style="color:#3390a2">░</span><span style="color:#3390a2">░</span><span style="color:#3391a3">░</span><span style="color:#3291a3">░</span><span style="color:#3392a4">░</span><span style="color:#3392a4">░</span><span style="color:#3394a6">░</span><span style="color:#3494a7">░</span><span style="color:#3695a7">░</span><span style="color:#3597aa">░</span><span style="color:#3698ab">░</span><span style="color:#3699ac">░</span><span style="color:#369bae">░</span><span style="color:#369cb0">▒</span><span style="color:#369db0">▒</span><span style="color:#39a0b2">▒</span><span style="color:#38a3b5">▒</span><span style="color:#3aa7b8">▒</span><span style="color:#3cacbd">▒</span><span style="color:#72e5e6">▓</span><span style="color:#dffefe">▓</span><span style="color:#fefefc">▓</span><span style="color:#fefdf9">▓</span><span style="color:#fefefa">▓</span><span style="color:#f4fefd">▓</span><span style="color:#a6f8f6">▓</span><span style="color:#41b5c3">▒</span><span style="color:#3aa7b8">▒</span><span style="color:#3a9fb0">▒</span><span style="color:#4892a1">░</span><span style="color:#4c9aa5">▒</span><span style="color:#6adad6">▒</span><span style="color:#92f1e6">▓</span><span style="color:#98f3e7">▓</span><span style="color:#79e8dd">▓</span><span style="color:#47b6b6">▒</span><span style="color:#286975">░</span><span style="color:#235b67">░</span><span style="color:#215562">░</span><span style="color:#20505e">░</span><span style="color:#1e4d59">░</span><span style="color:#1d4855"> </span><span style="color:#1d4753"> </span><span style="color:#1e4a55"> </span><span style="color:#1e4d57">░</span><span style="color:#215460">░</span><span style="color:#25656f">░</span><span style="color:#245862">░</span><span style="color:#20414a"> </span><span style="color:#1e3c45"> </span><span style="color:#1f3c43"> </span><span style="color:#1b373e"> </span><span style="color:#173037"> </span><span style="color:#142d34"> </span><span style="color:#132c33"> </span><br><span style="color:#4c383f"> </span><span style="color:#e1504b">░</span><span style="color:#f28979">▒</span><span style="color:#ecc6af">▓</span><span style="color:#f0ae98">▒</span><span style="color:#f49784">▒</span><span style="color:#e9baab">▓</span><span style="color:#b6918b">▒</span><span style="color:#35464f">░</span><span style="color:#2e4953">░</span><span style="color:#294853">░</span><span style="color:#23424d"> </span><span style="color:#22414c"> </span><span style="color:#244953"> </span><span style="color:#28535e">░</span><span style="color:#295864">░</span><span style="color:#295a67">░</span><span style="color:#295e6b">░</span><span style="color:#257d87">░</span><span style="color:#28bdc3">▒</span><span style="color:#2dd5d9">▒</span><span style="color:#29b8bf">▒</span><span style="color:#2d8b99">░</span><span style="color:#328697">░</span><span style="color:#338d9f">░</span><span style="color:#3492a4">░</span><span style="color:#3493a6">░</span><span style="color:#3595a7">░</span><span style="color:#3596a8">░</span><span style="color:#3596a8">░</span><span style="color:#3697a9">░</span><span style="color:#3497aa">░</span><span style="color:#3598ac">░</span><span style="color:#3699ac">░</span><span style="color:#369aad">░</span><span style="color:#379caf">▒</span><span style="color:#379db0">▒</span><span style="color:#389fb1">▒</span><span style="color:#39a0b2">▒</span><span style="color:#3aa1b4">▒</span><span style="color:#39a3b6">▒</span><span style="color:#3ca7b9">▒</span><span style="color:#3ca9bb">▒</span><span style="color:#3eb0c0">▒</span><span style="color:#74e6e7">▓</span><span style="color:#e0fefe">▓</span><span style="color:#fefeff">▓</span><span style="color:#ffffff">█</span><span style="color:#fefffe">▓</span><span style="color:#f8fefd">▓</span><span style="color:#aef9f8">▓</span><span style="color:#44bac8">▒</span><span style="color:#3dabbc">▒</span><span style="color:#3ba3b4">▒</span><span style="color:#3693a5">░</span><span style="color:#3caab2">▒</span><span style="color:#92faf7">▓</span><span style="color:#e4fefd">▓</span><span style="color:#f5fefe">▓</span><span style="color:#c9fefb">▓</span><span style="color:#65e7e2">▓</span><span style="color:#2a7681">░</span><span style="color:#24616e">░</span><span style="color:#215865">░</span><span style="color:#215361">░</span><span style="color:#21505e">░</span><span style="color:#1f4b57"> </span><span style="color:#1f4955"> </span><span style="color:#1f4a56"> </span><span style="color:#214f59">░</span><span style="color:#235662">░</span><span style="color:#286c75">░</span><span style="color:#27616b">░</span><span style="color:#21444d"> </span><span style="color:#213f48"> </span><span style="color:#203e46"> </span><span style="color:#1c3841"> </span><span style="color:#173037"> </span><span style="color:#142d34"> </span><span style="color:#132c33"> </span><br><span style="color:#633d3f">░</span><span style="color:#f56a57">▒</span><span style="color:#f9d3b8">▓</span><span style="color:#fdfef8">▓</span><span style="color:#f9fcf1">▓</span><span style="color:#fbfdf2">▓</span><span style="color:#f8fbef">▓</span><span style="color:#beb5a7">▒</span><span style="color:#3d4a53">░</span><span style="color:#354c57">░</span><span style="color:#2d4b56">░</span><span style="color:#26444f"> </span><span style="color:#25444f"> </span><span style="color:#284b57">░</span><span style="color:#2a5560">░</span><span style="color:#2b5a66">░</span><span style="color:#2b5d68">░</span><span style="color:#2a606d">░</span><span style="color:#28858e">░</span><span style="color:#2bc5c9">▒</span><span style="color:#31d8db">▒</span><span style="color:#2db5bc">▒</span><span style="color:#7ca59f">▒</span><span style="color:#a8b3a3">▒</span><span style="color:#a3b4a9">▒</span><span style="color:#78a2a6">▒</span><span style="color:#559eaa">▒</span><span style="color:#3898aa">░</span><span style="color:#3799aa">░</span><span style="color:#3699ac">░</span><span style="color:#379aaf">░</span><span style="color:#379aad">░</span><span style="color:#389bae">▒</span><span style="color:#389caf">▒</span><span style="color:#399fb1">▒</span><span style="color:#3aa0b3">▒</span><span style="color:#3ba0b4">▒</span><span style="color:#3ba1b4">▒</span><span style="color:#3ca3b4">▒</span><span style="color:#3ca4b6">▒</span><span style="color:#3ca6b9">▒</span><span style="color:#3faabc">▒</span><span style="color:#3eadbf">▒</span><span style="color:#41b2c3">▒</span><span style="color:#6fe7e7">▓</span><span style="color:#d3fefc">▓</span><span style="color:#f6fefd">▓</span><span style="color:#f8fffe">▓</span><span style="color:#f8fefe">▓</span><span style="color:#edfefd">▓</span><span style="color:#a8f9f7">▓</span><span style="color:#45bcc9">▒</span><span style="color:#3eadc0">▒</span><span style="color:#3ba6b8">▒</span><span style="color:#3696a7">░</span><span style="color:#3da9b3">▒</span><span style="color:#8efaf7">▓</span><span style="color:#e4fefe">▓</span><span style="color:#f8fefe">▓</span><span style="color:#d3fefc">▓</span><span style="color:#6fece8">▓</span><span style="color:#2b7c87">░</span><span style="color:#266471">░</span><span style="color:#235c68">░</span><span style="color:#235764">░</span><span style="color:#225360">░</span><span style="color:#204e5b">░</span><span style="color:#1f4b57"> </span><span style="color:#204c57">░</span><span style="color:#21505c">░</span><span style="color:#235964">░</span><span style="color:#2a727c">░</span><span style="color:#2a6771">░</span><span style="color:#234851"> </span><span style="color:#22404a"> </span><span style="color:#203e47"> </span><span style="color:#1c3941"> </span><span style="color:#183239"> </span><span style="color:#162f36"> </span><span style="color:#152e35"> </span><br><span style="color:#703f43">░</span><span style="color:#f86c5b">▒</span><span style="color:#f9d4ba">▓</span><span style="color:#fbfdf0">▓</span><span style="color:#fafaeb">▓</span><span style="color:#fafaed">▓</span><span style="color:#f5f6e7">▓</span><span style="color:#b9aa9d">▒</span><span style="color:#3f4c55">░</span><span style="color:#384e58">░</span><span style="color:#2f4b56">░</span><span style="color:#274550"> </span><span style="color:#264550"> </span><span style="color:#284c58">░</span><span style="color:#2d5863">░</span><span style="color:#2d5d69">░</span><span style="color:#2e5e6a">░</span><span style="color:#2d616d">░</span><span style="color:#298992">░</span><span style="color:#2ec7cb">▒</span><span style="color:#34d6d8">▒</span><span style="color:#2bb2b8">▒</span><span style="color:#2b7784">░</span><span style="color:#2e6978">░</span><span style="color:#2d7080">░</span><span style="color:#338495">░</span><span style="color:#3695a7">░</span><span style="color:#389aad">░</span><span style="color:#399bae">▒</span><span style="color:#399caf">▒</span><span style="color:#399daf">▒</span><span style="color:#399eb0">▒</span><span style="color:#3a9fb2">▒</span><span style="color:#3aa0b4">▒</span><span style="color:#3aa1b4">▒</span><span style="color:#3ba2b5">▒</span><span style="color:#3ca3b6">▒</span><span style="color:#3da4b7">▒</span><span style="color:#3ba4b7">▒</span><span style="color:#3ca6b9">▒</span><span style="color:#3da9bb">▒</span><span style="color:#3eabbc">▒</span><span style="color:#40aebf">▒</span><span style="color:#41b0c1">▒</span><span style="color:#52d6db">▒</span><span style="color:#75f6f2">▓</span><span style="color:#78f7f4">▓</span><span style="color:#5eeae8">▓</span><span style="color:#64f1eb">▓</span><span style="color:#78f7f2">▓</span><span style="color:#6aecec">▓</span><span style="color:#58bdca">▒</span><span style="color:#42a6b8">▒</span><span style="color:#3796aa">░</span><span style="color:#368e9f">░</span><span style="color:#3da5b0">▒</span><span style="color:#8bf9f5">▓</span><span style="color:#e3fefe">▓</span><span style="color:#f9fefe">▓</span><span style="color:#d7fefd">▓</span><span style="color:#76f3ed">▓</span><span style="color:#2d818c">░</span><span style="color:#276875">░</span><span style="color:#245e6c">░</span><span style="color:#235967">░</span><span style="color:#235663">░</span><span style="color:#22515e">░</span><span style="color:#204d5a">░</span><span style="color:#214e5a">░</span><span style="color:#23515e">░</span><span style="color:#255763">░</span><span style="color:#2c6f7a">░</span><span style="color:#2e6974">░</span><span style="color:#2b4d57">░</span><span style="color:#28434d"> </span><span style="color:#244149"> </span><span style="color:#233f46"> </span><span style="color:#1e383f"> </span><span style="color:#193239"> </span><span style="color:#193239"> </span><br><span style="color:#795454">░</span><span style="color:#ecd2bc">▓</span><span style="color:#f6f2de">▓</span><span style="color:#f8f6e2">▓</span><span style="color:#f6f5e1">▓</span><span style="color:#f6e1c7">▓</span><span style="color:#fa977d">▒</span><span style="color:#c25555">░</span><span style="color:#3d4b54">░</span><span style="color:#384e5a">░</span><span style="color:#2e4c57">░</span><span style="color:#284651"> </span><span style="color:#284752"> </span><span style="color:#2b4f5b">░</span><span style="color:#2e5964">░</span><span style="color:#2e5e6a">░</span><span style="color:#2e5f6d">░</span><span style="color:#2e6471">░</span><span style="color:#2b8890">░</span><span style="color:#2cbabe">▒</span><span style="color:#2fc5cb">▒</span><span style="color:#2ba2ab">░</span><span style="color:#2c7181">░</span><span style="color:#2d6878">░</span><span style="color:#2e7080">░</span><span style="color:#348697">░</span><span style="color:#3998a9">░</span><span style="color:#3d9eaf">▒</span><span style="color:#3f9fb0">▒</span><span style="color:#3ca0b2">▒</span><span style="color:#3ca0b3">▒</span><span style="color:#3ca1b4">▒</span><span style="color:#3da2b5">▒</span><span style="color:#3da2b6">▒</span><span style="color:#3ea5b6">▒</span><span style="color:#3fa6b9">▒</span><span style="color:#3ea6bb">▒</span><span style="color:#3da3b7">▒</span><span style="color:#3c9fb3">▒</span><span style="color:#3c9cad">▒</span><span style="color:#3ca3b4">▒</span><span style="color:#3eaabb">▒</span><span style="color:#3faebf">▒</span><span style="color:#42b1c2">▒</span><span style="color:#41adbf">▒</span><span style="color:#3aa1b3">▒</span><span style="color:#3699ac">░</span><span style="color:#3897aa">░</span><span style="color:#3696a9">░</span><span style="color:#3994a8">░</span><span style="color:#94cdd4">▒</span><span style="color:#b1dce3">▓</span><span style="color:#8fc9d3">▒</span><span style="color:#388e9f">░</span><span style="color:#36879a">░</span><span style="color:#3b9fac">▒</span><span style="color:#7cf8f3">▓</span><span style="color:#cefefd">▓</span><span style="color:#e7fefc">▓</span><span style="color:#ccfefc">▓</span><span style="color:#78f3ef">▓</span><span style="color:#2f8591">░</span><span style="color:#296978">░</span><span style="color:#26606e">░</span><span style="color:#255b68">░</span><span style="color:#245866">░</span><span style="color:#235361">░</span><span style="color:#214f5c">░</span><span style="color:#224f5c">░</span><span style="color:#23515e">░</span><span style="color:#255461">░</span><span style="color:#2f6571">░</span><span style="color:#3d6570">░</span><span style="color:#705d6d">░</span><span style="color:#6a5764">░</span><span style="color:#3d4b54">░</span><span style="color:#26414a"> </span><span style="color:#1e3741"> </span><span style="color:#193239"> </span><span style="color:#183138"> </span><br><span style="color:#875857">░</span><span style="color:#eed5be">▓</span><span style="color:#f9f9e8">▓</span><span style="color:#fbfdf1">▓</span><span style="color:#fbfcee">▓</span><span style="color:#f8e7d1">▓</span><span style="color:#f99981">▒</span><span style="color:#ba5255">░</span><span style="color:#3b4a55">░</span><span style="color:#37505b">░</span><span style="color:#2f4d58">░</span><span style="color:#294752"> </span><span style="color:#2a4954">░</span><span style="color:#2d515d">░</span><span style="color:#315c68">░</span><span style="color:#30616d">░</span><span style="color:#306370">░</span><span style="color:#306673">░</span><span style="color:#2c8793">░</span><span style="color:#2aafb7">▒</span><span style="color:#2bb3ba">▒</span><span style="color:#2c8d99">░</span><span style="color:#2e6f7e">░</span><span style="color:#2d6b7a">░</span><span style="color:#2f7383">░</span><span style="color:#36889b">░</span><span style="color:#529ead">▒</span><span style="color:#6ca4af">▒</span><span style="color:#6ca4ae">▒</span><span style="color:#4ba3b4">▒</span><span style="color:#3ea3b7">▒</span><span style="color:#40a5b7">▒</span><span style="color:#40a5b8">▒</span><span style="color:#40a5b9">▒</span><span style="color:#40a6b8">▒</span><span style="color:#2f7380">░</span><span style="color:#141e22"> </span><span style="color:#182326"> </span><span style="color:#1d3034"> </span><span style="color:#1e3338"> </span><span style="color:#1a292e"> </span><span style="color:#131d1f"> </span><span style="color:#0b1316"> </span><span style="color:#306f7b">░</span><span style="color:#3cb6d5">▒</span><span style="color:#41d5f7">▒</span><span style="color:#84edfc">▓</span><span style="color:#a3f2fa">▓</span><span style="color:#8bedfa">▓</span><span style="color:#4cd4f7">▒</span><span style="color:#95dff3">▓</span><span style="color:#b9e5ed">▓</span><span style="color:#98d2dc">▓</span><span style="color:#3b91a2">░</span><span style="color:#38899a">░</span><span style="color:#3c9dab">▒</span><span style="color:#6af1ee">▓</span><span style="color:#abfdfb">▓</span><span style="color:#bdfdfc">▓</span><span style="color:#a8fefb">▓</span><span style="color:#6df0ec">▓</span><span style="color:#318993">░</span><span style="color:#2f6c79">░</span><span style="color:#306471">░</span><span style="color:#2c5f6c">░</span><span style="color:#265966">░</span><span style="color:#255563">░</span><span style="color:#22505d">░</span><span style="color:#22505d">░</span><span style="color:#24525f">░</span><span style="color:#265360">░</span><span style="color:#385e69">░</span><span style="color:#4a616b">░</span><span style="color:#5a5866">░</span><span style="color:#4f515d">░</span><span style="color:#2c454f"> </span><span style="color:#234048"> </span><span style="color:#1e3942"> </span><span style="color:#1a333d"> </span><span style="color:#18333a"> </span><br><span style="color:#9c5a59">░</span><span style="color:#f3dec8">▓</span><span style="color:#fbfcf0">▓</span><span style="color:#f3e8ce">▓</span><span style="color:#f7f1de">▓</span><span style="color:#fbfbf1">▓</span><span style="color:#f6cdb6">▓</span><span style="color:#af5757">░</span><span style="color:#394b55">░</span><span style="color:#37505d">░</span><span style="color:#2f4d58">░</span><span style="color:#2a4755">░</span><span style="color:#2b4a57">░</span><span style="color:#2e5461">░</span><span style="color:#325e6b">░</span><span style="color:#32626e">░</span><span style="color:#326471">░</span><span style="color:#326674">░</span><span style="color:#2e7884">░</span><span style="color:#2b929e">░</span><span style="color:#2d93a0">░</span><span style="color:#2e7d8a">░</span><span style="color:#306e7d">░</span><span style="color:#306b7b">░</span><span style="color:#317685">░</span><span style="color:#388b9e">░</span><span style="color:#419aac">▒</span><span style="color:#4998aa">▒</span><span style="color:#4a99aa">▒</span><span style="color:#44a2b5">▒</span><span style="color:#41a7ba">▒</span><span style="color:#41a7ba">▒</span><span style="color:#41a8bb">▒</span><span style="color:#41a8bb">▒</span><span style="color:#33656e">░</span><span style="color:#4d4f4c">░</span><span style="color:#7b6c63">░</span><span style="color:#565a5a">░</span><span style="color:#3e4e52">░</span><span style="color:#22292b"> </span><span style="color:#212222"> </span><span style="color:#282421"> </span><span style="color:#423934"> </span><span style="color:#45423d">░</span><span style="color:#2e7282">░</span><span style="color:#5be6fd">▒</span><span style="color:#bcfcfd">▓</span><span style="color:#ddfdfd">▓</span><span style="color:#c8fcfd">▓</span><span style="color:#6ee9fd">▓</span><span style="color:#95e5f7">▓</span><span style="color:#b7e6ef">▓</span><span style="color:#9ad5df">▓</span><span style="color:#3c93a5">░</span><span style="color:#398a9c">░</span><span style="color:#429fab">▒</span><span style="color:#a9f8f5">▓</span><span style="color:#f2fdfd">▓</span><span style="color:#fefefe">▓</span><span style="color:#f7fefe">▓</span><span style="color:#bafaf6">▓</span><span style="color:#3e99a1">░</span><span style="color:#2e6e7c">░</span><span style="color:#2d6572">░</span><span style="color:#2a5f6c">░</span><span style="color:#285b68">░</span><span style="color:#265664">░</span><span style="color:#23515e">░</span><span style="color:#24505d">░</span><span style="color:#255360">░</span><span style="color:#295461">░</span><span style="color:#41616b">░</span><span style="color:#55666e">░</span><span style="color:#425861">░</span><span style="color:#2c4a54">░</span><span style="color:#284650"> </span><span style="color:#244149"> </span><span style="color:#1e3b43"> </span><span style="color:#1a353d"> </span><span style="color:#19343d"> </span><br><span style="color:#b34b4a">░</span><span style="color:#fa957b">▒</span><span style="color:#fadbc5">▓</span><span style="color:#faefdd">▓</span><span style="color:#f9e8d4">▓</span><span style="color:#f9c2a7">▓</span><span style="color:#fc7c67">▒</span><span style="color:#a84f55">░</span><span style="color:#384b57">░</span><span style="color:#36505c">░</span><span style="color:#304e59">░</span><span style="color:#2a4853">░</span><span style="color:#2c4c58">░</span><span style="color:#305762">░</span><span style="color:#34606c">░</span><span style="color:#346470">░</span><span style="color:#346573">░</span><span style="color:#346674">░</span><span style="color:#316673">░</span><span style="color:#316775">░</span><span style="color:#316979">░</span><span style="color:#316c7c">░</span><span style="color:#326d7d">░</span><span style="color:#306c7e">░</span><span style="color:#337789">░</span><span style="color:#398ea1">░</span><span style="color:#4c9db1">▒</span><span style="color:#6f9db2">▒</span><span style="color:#769eb3">▒</span><span style="color:#57a5ba">▒</span><span style="color:#43a9bd">▒</span><span style="color:#43aabb">▒</span><span style="color:#44aabc">▒</span><span style="color:#44a8b9">▒</span><span style="color:#625c4c">░</span><span style="color:#6f4b35">░</span><span style="color:#6a4f3f">░</span><span style="color:#604e43">░</span><span style="color:#5a4a41">░</span><span style="color:#574337">░</span><span style="color:#553d30">░</span><span style="color:#492f20"> </span><span style="color:#472d20"> </span><span style="color:#604936">░</span><span style="color:#615c4a">░</span><span style="color:#e7f4d9">▓</span><span style="color:#f7fae2">▓</span><span style="color:#fafbe3">▓</span><span style="color:#f9fae3">▓</span><span style="color:#f1f8de">▓</span><span style="color:#dff4e5">▓</span><span style="color:#b2e2e7">▓</span><span style="color:#8dced9">▒</span><span style="color:#3e96a8">░</span><span style="color:#398ca0">░</span><span style="color:#3e9dac">▒</span><span style="color:#6df3f1">▓</span><span style="color:#adfefb">▓</span><span style="color:#bdfefc">▓</span><span style="color:#b3fefd">▓</span><span style="color:#7ef8f3">▓</span><span style="color:#399ca5">░</span><span style="color:#2e7080">░</span><span style="color:#4d898d">░</span><span style="color:#7db3aa">▒</span><span style="color:#73a9a2">▒</span><span style="color:#336771">░</span><span style="color:#255461">░</span><span style="color:#26525f">░</span><span style="color:#285461">░</span><span style="color:#295562">░</span><span style="color:#40636d">░</span><span style="color:#536973">░</span><span style="color:#415d66">░</span><span style="color:#2c4b55">░</span><span style="color:#2a4852">░</span><span style="color:#26444d"> </span><span style="color:#213d46"> </span><span style="color:#1d3841"> </span><span style="color:#1c3740"> </span><br><span style="color:#c34d4d">░</span><span style="color:#fb8d74">▒</span><span style="color:#fbb695">▓</span><span style="color:#fbbc9d">▓</span><span style="color:#fabe9f">▓</span><span style="color:#fbb495">▓</span><span style="color:#fc826d">▒</span><span style="color:#9d4e55">░</span><span style="color:#384c57">░</span><span style="color:#35525d">░</span><span style="color:#2f4e5b">░</span><span style="color:#2c4956">░</span><span style="color:#2e4f5a">░</span><span style="color:#325966">░</span><span style="color:#346270">░</span><span style="color:#356573">░</span><span style="color:#356674">░</span><span style="color:#356976">░</span><span style="color:#336775">░</span><span style="color:#316675">░</span><span style="color:#30697a">░</span><span style="color:#326d7d">░</span><span style="color:#336e7e">░</span><span style="color:#336e80">░</span><span style="color:#367c8e">░</span><span style="color:#3e91a5">░</span><span style="color:#90b6c6">▒</span><span style="color:#d5e3eb">▓</span><span style="color:#deeaf2">▓</span><span style="color:#b4cbd8">▓</span><span style="color:#4eacbf">▒</span><span style="color:#45acbf">▒</span><span style="color:#49abbc">▒</span><span style="color:#777174">░</span><span style="color:#525049">░</span><span style="color:#78502f">░</span><span style="color:#4e3e34">░</span><span style="color:#514b47">░</span><span style="color:#573c2e">░</span><span style="color:#573222"> </span><span style="color:#542e1d"> </span><span style="color:#3c2e24"> </span><span style="color:#3e3329"> </span><span style="color:#614a34">░</span><span style="color:#92907e">▒</span><span style="color:#f0f4de">▓</span><span style="color:#fefde3">▓</span><span style="color:#fdfdda">▓</span><span style="color:#fdfddf">▓</span><span style="color:#fbfde5">▓</span><span style="color:#e2f4dd">▓</span><span style="color:#6fc1cb">▒</span><span style="color:#47a7b9">▒</span><span style="color:#3f98aa">░</span><span style="color:#3d8d9f">░</span><span style="color:#3e9bab">▒</span><span style="color:#5ff1ee">▓</span><span style="color:#85efec">▓</span><span style="color:#6ecac9">▒</span><span style="color:#9afcfa">▓</span><span style="color:#5fd6d5">▒</span><span style="color:#397d83">░</span><span style="color:#2a4a54">░</span><span style="color:#518082">░</span><span style="color:#92c4b9">▒</span><span style="color:#91c6ba">▒</span><span style="color:#407579">░</span><span style="color:#285765">░</span><span style="color:#265461">░</span><span style="color:#285461">░</span><span style="color:#285562">░</span><span style="color:#335d69">░</span><span style="color:#3f646e">░</span><span style="color:#385a64">░</span><span style="color:#2f4e58">░</span><span style="color:#2c4a54">░</span><span style="color:#284550"> </span><span style="color:#234048"> </span><span style="color:#1f3a43"> </span><span style="color:#1e3942"> </span><br><span style="color:#9c3f48">░</span><span style="color:#f15455">▒</span><span style="color:#f6615d">▒</span><span style="color:#f5645e">▒</span><span style="color:#f5645e">▒</span><span style="color:#f3615c">▒</span><span style="color:#e65153">░</span><span style="color:#684852">░</span><span style="color:#364d5a">░</span><span style="color:#34515d">░</span><span style="color:#2f4e5a">░</span><span style="color:#2d4a58">░</span><span style="color:#2f505d">░</span><span style="color:#335b67">░</span><span style="color:#376572">░</span><span style="color:#386874">░</span><span style="color:#376a77">░</span><span style="color:#386c7a">░</span><span style="color:#36707e">░</span><span style="color:#377282">░</span><span style="color:#367181">░</span><span style="color:#357080">░</span><span style="color:#357081">░</span><span style="color:#357082">░</span><span style="color:#377e91">░</span><span style="color:#4196a8">░</span><span style="color:#97b5c8">▒</span><span style="color:#d9dee8">▓</span><span style="color:#e3e5ee">▓</span><span style="color:#b7c6d5">▓</span><span style="color:#50afc2">▒</span><span style="color:#48afc2">▒</span><span style="color:#48afc1">▒</span><span style="color:#6e5155">░</span><span style="color:#865948">░</span><span style="color:#9c6723">░</span><span style="color:#d2a81b">▒</span><span style="color:#cfa21a">▒</span><span style="color:#bd8c18">▒</span><span style="color:#4a2d1e"> </span><span style="color:#74510d">░</span><span style="color:#cfa51a">▒</span><span style="color:#cda216">▒</span><span style="color:#ca9c1a">▒</span><span style="color:#632a15"> </span><span style="color:#936155">░</span><span style="color:#fbf0e8">▓</span><span style="color:#fae4cd">▓</span><span style="color:#fae9d9">▓</span><span style="color:#f9f5ee">▓</span><span style="color:#e6eceb">▓</span><span style="color:#81bfcd">▒</span><span style="color:#4ea8ba">▒</span><span style="color:#419aac">▒</span><span style="color:#3e8e9f">░</span><span style="color:#408d9e">░</span><span style="color:#48adb3">▒</span><span style="color:#503113"> </span><span style="color:#7d3001">░</span><span style="color:#7e3402">░</span><span style="color:#1f0e05"> </span><span style="color:#08080d"> </span><span style="color:#06080d"> </span><span style="color:#04070c"> </span><span style="color:#0e1319"> </span><span style="color:#2d403f"> </span><span style="color:#3d676e">░</span><span style="color:#2a5a68">░</span><span style="color:#1f3a40"> </span><span style="color:#703304">░</span><span style="color:#392516"> </span><span style="color:#555969">░</span><span style="color:#906774">░</span><span style="color:#d5a082">▒</span><span style="color:#dda982">▒</span><span style="color:#9d836c">▒</span><span style="color:#344c54">░</span><span style="color:#26424a"> </span><span style="color:#203b44"> </span><span style="color:#1e3942"> </span><br><span style="color:#333a44"> </span><span style="color:#333a45"> </span><span style="color:#353d47"> </span><span style="color:#3d464c">░</span><span style="color:#475155">░</span><span style="color:#465156">░</span><span style="color:#35464f">░</span><span style="color:#324550">░</span><span style="color:#334c58">░</span><span style="color:#35515d">░</span><span style="color:#314f5a">░</span><span style="color:#2e4c57">░</span><span style="color:#31525f">░</span><span style="color:#365e6a">░</span><span style="color:#386673">░</span><span style="color:#396a78">░</span><span style="color:#3a6b79">░</span><span style="color:#386e7c">░</span><span style="color:#397384">░</span><span style="color:#397889">░</span><span style="color:#397788">░</span><span style="color:#387385">░</span><span style="color:#377284">░</span><span style="color:#357284">░</span><span style="color:#398194">░</span><span style="color:#3f98ac">▒</span><span style="color:#5ba5ba">▒</span><span style="color:#8da8bf">▒</span><span style="color:#97abc1">▒</span><span style="color:#6caec2">▒</span><span style="color:#4bb1c4">▒</span><span style="color:#48b1c4">▒</span><span style="color:#49b2c5">▒</span><span style="color:#4db1c2">▒</span><span style="color:#707c74">░</span><span style="color:#824622">░</span><span style="color:#68290b"> </span><span style="color:#642b12"> </span><span style="color:#6a3b2a">░</span><span style="color:#765953">░</span><span style="color:#58301e"> </span><span style="color:#531f07"> </span><span style="color:#5f2206"> </span><span style="color:#6f3d1c">░</span><span style="color:#85877c">▒</span><span style="color:#e0fdfd">▓</span><span style="color:#f8fefe">▓</span><span style="color:#fbfefd">▓</span><span style="color:#fbfefd">▓</span><span style="color:#f8fefd">▓</span><span style="color:#e8f6f3">▓</span><span style="color:#9fc2c9">▒</span><span style="color:#5f9fb0">▒</span><span style="color:#365e6b">░</span><span style="color:#1c282f"> </span><span style="color:#0b0e13"> </span><span style="color:#0f0b0a"> </span><span style="color:#622400"> </span><span style="color:#340c00"> </span><span style="color:#270700"> </span><span style="color:#642502"> </span><span style="color:#3a2003"> </span><span style="color:#2f1702"> </span><span style="color:#080304"> </span><span style="color:#030306"> </span><span style="color:#07090e"> </span><span style="color:#182125"> </span><span style="color:#1d1816"> </span><span style="color:#642702"> </span><span style="color:#632603"> </span><span style="color:#2a3b43"> </span><span style="color:#996075">░</span><span style="color:#df7785">▒</span><span style="color:#e78f83">▒</span><span style="color:#ac8472">▒</span><span style="color:#3b525a">░</span><span style="color:#2d4954">░</span><span style="color:#28444d"> </span><span style="color:#223d46"> </span><span style="color:#213c45"> </span><br><span style="color:#323c45"> </span><span style="color:#323c45"> </span><span style="color:#454d50">░</span><span style="color:#8b8a75">▒</span><span style="color:#b0ae95">▒</span><span style="color:#9d9d87">▒</span><span style="color:#505d5e">░</span><span style="color:#324551">░</span><span style="color:#344c58">░</span><span style="color:#35505d">░</span><span style="color:#324f5c">░</span><span style="color:#304d5b">░</span><span style="color:#325461">░</span><span style="color:#38606c">░</span><span style="color:#3b6977">░</span><span style="color:#3c6c7a">░</span><span style="color:#3c707d">░</span><span style="color:#3e717f">░</span><span style="color:#5b7384">░</span><span style="color:#8c778d">▒</span><span style="color:#8a7890">▒</span><span style="color:#57778b">░</span><span style="color:#3c7688">░</span><span style="color:#3a7688">░</span><span style="color:#3b8497">░</span><span style="color:#419bae">▒</span><span style="color:#54b1c3">▒</span><span style="color:#88cfdb">▒</span><span style="color:#8dd0dd">▒</span><span style="color:#67becd">▒</span><span style="color:#49acbe">▒</span><span style="color:#47abbe">▒</span><span style="color:#49afc2">▒</span><span style="color:#4cb3c4">▒</span><span style="color:#4f9da9">▒</span><span style="color:#703c1b">░</span><span style="color:#7a4422">░</span><span style="color:#694d39">░</span><span style="color:#564238">░</span><span style="color:#442219"> </span><span style="color:#37180c"> </span><span style="color:#452616"> </span><span style="color:#613415"> </span><span style="color:#603c20">░</span><span style="color:#7edee4">▓</span><span style="color:#e1fefd">▓</span><span style="color:#fefefe">▓</span><span style="color:#feffff">▓</span><span style="color:#fefffe">▓</span><span style="color:#f6fdfd">▓</span><span style="color:#beedef">▓</span><span style="color:#3d5c62">░</span><span style="color:#10141b"> </span><span style="color:#09090e"> </span><span style="color:#513608"> </span><span style="color:#daba05">▒</span><span style="color:#241507"> </span><span style="color:#481d04"> </span><span style="color:#381302"> </span><span style="color:#1a0600"> </span><span style="color:#7b3503">░</span><span style="color:#e7bc02">▒</span><span style="color:#e0b807">▒</span><span style="color:#5d2a03"> </span><span style="color:#070202"> </span><span style="color:#020204"> </span><span style="color:#080607"> </span><span style="color:#401a05"> </span><span style="color:#5a2303"> </span><span style="color:#323c3c"> </span><span style="color:#2d5765">░</span><span style="color:#3a5665">░</span><span style="color:#565768">░</span><span style="color:#485664">░</span><span style="color:#35525d">░</span><span style="color:#314f59">░</span><span style="color:#2d4b55">░</span><span style="color:#2a464f"> </span><span style="color:#244049"> </span><span style="color:#223f47"> </span><br><span style="color:#38434b">░</span><span style="color:#36434c">░</span><span style="color:#38474e">░</span><span style="color:#4c5a5b">░</span><span style="color:#536162">░</span><span style="color:#4d5c5e">░</span><span style="color:#374b54">░</span><span style="color:#344755">░</span><span style="color:#364e5b">░</span><span style="color:#37525e">░</span><span style="color:#34505e">░</span><span style="color:#33505d">░</span><span style="color:#365765">░</span><span style="color:#3a6271">░</span><span style="color:#3d6a79">░</span><span style="color:#3e6e7c">░</span><span style="color:#3f707f">░</span><span style="color:#507385">░</span><span style="color:#c77b96">▒</span><span style="color:#fa82a6">▒</span><span style="color:#fa84a8">▒</span><span style="color:#be7d9c">▒</span><span style="color:#4b788c">░</span><span style="color:#3c788a">░</span><span style="color:#3e8699">░</span><span style="color:#429bae">▒</span><span style="color:#5ab3c5">▒</span><span style="color:#94d4de">▓</span><span style="color:#98d6e0">▓</span><span style="color:#68baca">▒</span><span style="color:#439db1">▒</span><span style="color:#4199ad">▒</span><span style="color:#3c8a9a">░</span><span style="color:#0c191c"> </span><span style="color:#030303"> </span><span style="color:#37241b"> </span><span style="color:#4f2711"> </span><span style="color:#603317"> </span><span style="color:#5b341c"> </span><span style="color:#472618"> </span><span style="color:#491f09"> </span><span style="color:#482107"> </span><span style="color:#4a260f"> </span><span style="color:#170e08"> </span><span style="color:#203436"> </span><span style="color:#c7dcdc">▓</span><span style="color:#fefefd">▓</span><span style="color:#f6fdfd">▓</span><span style="color:#a4d3d6">▓</span><span style="color:#344f55">░</span><span style="color:#0d1015"> </span><span style="color:#341a0b"> </span><span style="color:#a87c05">░</span><span style="color:#160b09"> </span><span style="color:#100e12"> </span><span style="color:#413614"> </span><span style="color:#ead412">▓</span><span style="color:#918742">▒</span><span style="color:#f0c705">▒</span><span style="color:#995302">░</span><span style="color:#652301"> </span><span style="color:#572904"> </span><span style="color:#c19504">▒</span><span style="color:#a96f05">░</span><span style="color:#2b1102"> </span><span style="color:#0c0505"> </span><span style="color:#1d1411"> </span><span style="color:#3e4748">░</span><span style="color:#2e5a68">░</span><span style="color:#2e5a67">░</span><span style="color:#2f5866">░</span><span style="color:#395866">░</span><span style="color:#52596a">░</span><span style="color:#4d5666">░</span><span style="color:#37535e">░</span><span style="color:#32505a">░</span><span style="color:#36545d">░</span><span style="color:#325058">░</span><span style="color:#28454d"> </span><span style="color:#233f4a"> </span><br><span style="color:#38454d">░</span><span style="color:#36454c">░</span><span style="color:#33444c">░</span><span style="color:#32444e">░</span><span style="color:#33454f">░</span><span style="color:#384754">░</span><span style="color:#3e4955">░</span><span style="color:#3d4a59">░</span><span style="color:#695363">░</span><span style="color:#a55d6f">░</span><span style="color:#ac6271">░</span><span style="color:#a75f71">░</span><span style="color:#6f5f70">░</span><span style="color:#416675">░</span><span style="color:#3f6c7b">░</span><span style="color:#417080">░</span><span style="color:#417281">░</span><span style="color:#547687">░</span><span style="color:#c67d99">▒</span><span style="color:#fa85a8">▒</span><span style="color:#fb87aa">▒</span><span style="color:#bf80a0">▒</span><span style="color:#527c90">░</span><span style="color:#6b8894">▒</span><span style="color:#8a9aa0">▒</span><span style="color:#84a3ac">▒</span><span style="color:#70b6c5">▒</span><span style="color:#a6dde7">▓</span><span style="color:#aae0e8">▓</span><span style="color:#70becd">▒</span><span style="color:#4296a8">░</span><span style="color:#162d33"> </span><span style="color:#0d1a20"> </span><span style="color:#0a0f12"> </span><span style="color:#070704"> </span><span style="color:#24190b"> </span><span style="color:#422b14"> </span><span style="color:#2e1b0d"> </span><span style="color:#371603"> </span><span style="color:#502102"> </span><span style="color:#391603"> </span><span style="color:#220f07"> </span><span style="color:#29150a"> </span><span style="color:#110a04"> </span><span style="color:#03090b"> </span><span style="color:#133139"> </span><span style="color:#293c3f"> </span><span style="color:#5c8186">░</span><span style="color:#1d1512"> </span><span style="color:#d09a05">▒</span><span style="color:#432907"> </span><span style="color:#120b0d"> </span><span style="color:#35240c"> </span><span style="color:#f5d305">▓</span><span style="color:#e3b531">▒</span><span style="color:#aa983d">▒</span><span style="color:#8f7a1d">░</span><span style="color:#2c2015"> </span><span style="color:#845606">░</span><span style="color:#c08604">▒</span><span style="color:#edc805">▒</span><span style="color:#debd05">▒</span><span style="color:#cab206">▒</span><span style="color:#8b6b09">░</span><span style="color:#815a03">░</span><span style="color:#b16206">░</span><span style="color:#d88407">▒</span><span style="color:#949145">▒</span><span style="color:#2f5d6a">░</span><span style="color:#305c69">░</span><span style="color:#2f5967">░</span><span style="color:#3c5a68">░</span><span style="color:#605c6c">░</span><span style="color:#5b596a">░</span><span style="color:#3c5461">░</span><span style="color:#385660">░</span><span style="color:#3c5d64">░</span><span style="color:#37555d">░</span><span style="color:#284650"> </span><span style="color:#24404b"> </span><br><span style="color:#36434b">░</span><span style="color:#35434b"> </span><span style="color:#30414b"> </span><span style="color:#2f414b"> </span><span style="color:#32434d"> </span><span style="color:#494956">░</span><span style="color:#6b5061">░</span><span style="color:#795464">░</span><span style="color:#f26d7a">▒</span><span style="color:#fba192">▒</span><span style="color:#fbbaa4">▓</span><span style="color:#fba697">▒</span><span style="color:#e97986">▒</span><span style="color:#576979">░</span><span style="color:#426f7f">░</span><span style="color:#407889">░</span><span style="color:#417a8a">░</span><span style="color:#57798c">░</span><span style="color:#c67f9c">▒</span><span style="color:#f987a9">▒</span><span style="color:#f887ac">▒</span><span style="color:#b982a0">▒</span><span style="color:#4c7e91">░</span><span style="color:#427d8f">░</span><span style="color:#488597">░</span><span style="color:#5097a8">▒</span><span style="color:#6fb9c8">▒</span><span style="color:#abe0e7">▓</span><span style="color:#acdfe6">▓</span><span style="color:#68b5c3">▒</span><span style="color:#347f8e">░</span><span style="color:#22474d"> </span><span style="color:#0c1316"> </span><span style="color:#050503"> </span><span style="color:#010000"> </span><span style="color:#160e08"> </span><span style="color:#231308"> </span><span style="color:#321808"> </span><span style="color:#270d04"> </span><span style="color:#1a0903"> </span><span style="color:#200b04"> </span><span style="color:#291008"> </span><span style="color:#0f0503"> </span><span style="color:#000000"> </span><span style="color:#010101"> </span><span style="color:#0d1b20"> </span><span style="color:#194b57"> </span><span style="color:#14363c"> </span><span style="color:#3f311c"> </span><span style="color:#190d08"> </span><span style="color:#825f05">░</span><span style="color:#e2b51c">▒</span><span style="color:#bba03a">▒</span><span style="color:#c6a02a">▒</span><span style="color:#766820">░</span><span style="color:#4f4112">░</span><span style="color:#d0ab05">▒</span><span style="color:#ca9605">▒</span><span style="color:#f2b403">▒</span><span style="color:#926606">░</span><span style="color:#e2cc06">▒</span><span style="color:#caad08">▒</span><span style="color:#675514">░</span><span style="color:#f0eb02">▓</span><span style="color:#6c5110">░</span><span style="color:#e5d302">▓</span><span style="color:#d9a105">▒</span><span style="color:#e8c304">▒</span><span style="color:#f8e207">▓</span><span style="color:#61775b">░</span><span style="color:#305b69">░</span><span style="color:#365b69">░</span><span style="color:#4c5b6b">░</span><span style="color:#4c5a69">░</span><span style="color:#3b5762">░</span><span style="color:#36545e">░</span><span style="color:#34525c">░</span><span style="color:#2e4f58">░</span><span style="color:#2a4852">░</span><span style="color:#27454f"> </span><br><span style="color:#36454c">░</span><span style="color:#35434c">░</span><span style="color:#32444d"> </span><span style="color:#32444e">░</span><span style="color:#344550">░</span><span style="color:#514d5a">░</span><span style="color:#765365">░</span><span style="color:#86586a">░</span><span style="color:#f77780">▒</span><span style="color:#fbb4a2">▓</span><span style="color:#fcc9b5">▓</span><span style="color:#fcb8a6">▓</span><span style="color:#e8828b">▒</span><span style="color:#56697b">░</span><span style="color:#4292aa">░</span><span style="color:#4abfdc">▒</span><span style="color:#4abcda">▒</span><span style="color:#5a90a7">▒</span><span style="color:#c7819d">▒</span><span style="color:#f887ab">▒</span><span style="color:#f489ac">▒</span><span style="color:#b484a1">▒</span><span style="color:#4c7e8f">░</span><span style="color:#367280">░</span><span style="color:#387f8e">░</span><span style="color:#35808e">░</span><span style="color:#2f7885">░</span><span style="color:#276c7a">░</span><span style="color:#297582">░</span><span style="color:#276d7a">░</span><span style="color:#236471">░</span><span style="color:#1b545f">░</span><span style="color:#153e47"> </span><span style="color:#071013"> </span><span style="color:#1e1c12"> </span><span style="color:#3a3721"> </span><span style="color:#2f2a16"> </span><span style="color:#3b2612"> </span><span style="color:#190d06"> </span><span style="color:#090503"> </span><span style="color:#200f07"> </span><span style="color:#231007"> </span><span style="color:#120a04"> </span><span style="color:#150f07"> </span><span style="color:#0d0c0c"> </span><span style="color:#121a1a"> </span><span style="color:#174049"> </span><span style="color:#22616c">░</span><span style="color:#206875">░</span><span style="color:#246a77">░</span><span style="color:#2f6a72">░</span><span style="color:#406c70">░</span><span style="color:#8f933f">▒</span><span style="color:#605a33">░</span><span style="color:#9c840c">░</span><span style="color:#271607"> </span><span style="color:#e9cb01">▒</span><span style="color:#d9a904">▒</span><span style="color:#dda801">▒</span><span style="color:#c39403">▒</span><span style="color:#af9706">▒</span><span style="color:#1b1511"> </span><span style="color:#22140d"> </span><span style="color:#0e0402"> </span><span style="color:#614c05">░</span><span style="color:#d8c903">▒</span><span style="color:#a08107">░</span><span style="color:#c8ac06">▒</span><span style="color:#aa8c03">▒</span><span style="color:#585937">░</span><span style="color:#325c6a">░</span><span style="color:#355c69">░</span><span style="color:#435c6a">░</span><span style="color:#445b69">░</span><span style="color:#3e5d67">░</span><span style="color:#567a7b">░</span><span style="color:#6c908c">▒</span><span style="color:#557979">░</span><span style="color:#34555c">░</span><span style="color:#294852">░</span><br><span style="color:#37464e">░</span><span style="color:#35464e">░</span><span style="color:#34454f">░</span><span style="color:#344651">░</span><span style="color:#364853">░</span><span style="color:#4b4d5a">░</span><span style="color:#625363">░</span><span style="color:#83586a">░</span><span style="color:#f77b86">▒</span><span style="color:#fbd6cf">▓</span><span style="color:#fcf6f1">▓</span><span style="color:#fbddd6">▓</span><span style="color:#e28690">▒</span><span style="color:#52687a">░</span><span style="color:#459bb5">▒</span><span style="color:#50cdeb">▒</span><span style="color:#4fc7e3">▒</span><span style="color:#4890a5">░</span><span style="color:#6b7e91">░</span><span style="color:#8c859c">▒</span><span style="color:#8a8aa1">▒</span><span style="color:#65889b">▒</span><span style="color:#3c3b37"> </span><span style="color:#11282f"> </span><span style="color:#12282e"> </span><span style="color:#142c31"> </span><span style="color:#19464f"> </span><span style="color:#13333b"> </span><span style="color:#112c33"> </span><span style="color:#103037"> </span><span style="color:#16454e"> </span><span style="color:#194b55"> </span><span style="color:#11323a"> </span><span style="color:#0c2228"> </span><span style="color:#070c0e"> </span><span style="color:#3f4436">░</span><span style="color:#626444">░</span><span style="color:#493716"> </span><span style="color:#33220c"> </span><span style="color:#1e1f1a"> </span><span style="color:#3e3117"> </span><span style="color:#524728">░</span><span style="color:#483516"> </span><span style="color:#3a260c"> </span><span style="color:#12100b"> </span><span style="color:#030304"> </span><span style="color:#0a171d"> </span><span style="color:#0c1f26"> </span><span style="color:#0b1a20"> </span><span style="color:#0a1518"> </span><span style="color:#0b191d"> </span><span style="color:#102428"> </span><span style="color:#101b1f"> </span><span style="color:#0e171a"> </span><span style="color:#0e1d21"> </span><span style="color:#2b261e"> </span><span style="color:#debb06">▒</span><span style="color:#d3a503">▒</span><span style="color:#aa7503">░</span><span style="color:#7d5b04">░</span><span style="color:#ceb405">▒</span><span style="color:#624d0c">░</span><span style="color:#1c130f"> </span><span style="color:#191211"> </span><span style="color:#ab9408">▒</span><span style="color:#a78d05">▒</span><span style="color:#e1ca04">▒</span><span style="color:#e9c203">▒</span><span style="color:#e6bc07">▒</span><span style="color:#5b7258">░</span><span style="color:#345e6b">░</span><span style="color:#355d69">░</span><span style="color:#3c5f6c">░</span><span style="color:#3f606b">░</span><span style="color:#4e696e">░</span><span style="color:#5e7777">░</span><span style="color:#4d6d71">░</span><span style="color:#385a62">░</span><span style="color:#30525b">░</span><span style="color:#2b4e57">░</span><br><span style="color:#38464f">░</span><span style="color:#35464e">░</span><span style="color:#344650">░</span><span style="color:#344650">░</span><span style="color:#384a55">░</span><span style="color:#494f5c">░</span><span style="color:#595462">░</span><span style="color:#855b6c">░</span><span style="color:#f9818b">▒</span><span style="color:#fbddd7">▓</span><span style="color:#fdf9f6">▓</span><span style="color:#faded7">▓</span><span style="color:#de8590">▒</span><span style="color:#51677a">░</span><span style="color:#4489a1">░</span><span style="color:#4ab2ce">▒</span><span style="color:#51afc8">▒</span><span style="color:#4f8a9a">░</span><span style="color:#497f8f">░</span><span style="color:#4a8799">░</span><span style="color:#4d8c9d">░</span><span style="color:#453f38">░</span><span style="color:#201c18"> </span><span style="color:#0f1f22"> </span><span style="color:#0c181a"> </span><span style="color:#111413"> </span><span style="color:#0f282e"> </span><span style="color:#0c1a1e"> </span><span style="color:#152a31"> </span><span style="color:#18434b"> </span><span style="color:#1a4953"> </span><span style="color:#1b4c57"> </span><span style="color:#184650"> </span><span style="color:#1c4c55"> </span><span style="color:#1c2b2e"> </span><span style="color:#423f2d"> </span><span style="color:#80774c">░</span><span style="color:#775922">░</span><span style="color:#62390c">░</span><span style="color:#533b1b"> </span><span style="color:#7c6532">░</span><span style="color:#887f4f">░</span><span style="color:#6a4c19">░</span><span style="color:#54320a"> </span><span style="color:#30210f"> </span><span style="color:#1c1c18"> </span><span style="color:#152428"> </span><span style="color:#112529"> </span><span style="color:#0f1f23"> </span><span style="color:#0d191b"> </span><span style="color:#081013"> </span><span style="color:#0c2229"> </span><span style="color:#0e1211"> </span><span style="color:#0b0d0d"> </span><span style="color:#0b1112"> </span><span style="color:#242119"> </span><span style="color:#c9ab13">▒</span><span style="color:#c59802">▒</span><span style="color:#f2dc02">▓</span><span style="color:#674506">░</span><span style="color:#a28406">░</span><span style="color:#3f2607"> </span><span style="color:#5e4706">░</span><span style="color:#977c05">░</span><span style="color:#d9c305">▒</span><span style="color:#ccb205">▒</span><span style="color:#e4be05">▒</span><span style="color:#fce001">▓</span><span style="color:#faea03">▓</span><span style="color:#657f5b">░</span><span style="color:#37616f">░</span><span style="color:#37606e">░</span><span style="color:#406370">░</span><span style="color:#436570">░</span><span style="color:#546b70">░</span><span style="color:#617979">░</span><span style="color:#709792">▒</span><span style="color:#6d9692">▒</span><span style="color:#4e7678">░</span><span style="color:#7bafb1">▒</span><br><span style="color:#779798">▒</span><span style="color:#43585f">░</span><span style="color:#374953">░</span><span style="color:#374955">░</span><span style="color:#3a4c58">░</span><span style="color:#4c515e">░</span><span style="color:#595564">░</span><span style="color:#8e5e6f">░</span><span style="color:#fb868f">▒</span><span style="color:#fbded7">▓</span><span style="color:#fdf7f2">▓</span><span style="color:#fbd6cf">▓</span><span style="color:#da808d">▒</span><span style="color:#4d6779">░</span><span style="color:#46687b">░</span><span style="color:#4e7381">░</span><span style="color:#67858e">░</span><span style="color:#698991">▒</span><span style="color:#578491">░</span><span style="color:#4f889a">░</span><span style="color:#507984">░</span><span style="color:#2f1f18"> </span><span style="color:#14110f"> </span><span style="color:#0f1111"> </span><span style="color:#0a0c0f"> </span><span style="color:#0d0c0b"> </span><span style="color:#0d1618"> </span><span style="color:#101a1e"> </span><span style="color:#0f1a1c"> </span><span style="color:#19353b"> </span><span style="color:#102326"> </span><span style="color:#153035"> </span><span style="color:#12282d"> </span><span style="color:#182f32"> </span><span style="color:#212925"> </span><span style="color:#a17d2c">░</span><span style="color:#f2d44d">▓</span><span style="color:#f4d84e">▓</span><span style="color:#f3d347">▓</span><span style="color:#f2d148">▓</span><span style="color:#f3d650">▓</span><span style="color:#f2d754">▓</span><span style="color:#f1d554">▓</span><span style="color:#eec740">▓</span><span style="color:#88641e">░</span><span style="color:#3c270d"> </span><span style="color:#1e1b13"> </span><span style="color:#111819"> </span><span style="color:#0a0f0e"> </span><span style="color:#122224"> </span><span style="color:#0f1110"> </span><span style="color:#0a0e0f"> </span><span style="color:#0a0b0a"> </span><span style="color:#0b0805"> </span><span style="color:#080708"> </span><span style="color:#171109"> </span><span style="color:#463423"> </span><span style="color:#c49f0b">▒</span><span style="color:#8d6602">░</span><span style="color:#cbb603">▒</span><span style="color:#573307"> </span><span style="color:#301f06"> </span><span style="color:#432b04"> </span><span style="color:#664706">░</span><span style="color:#a48505">▒</span><span style="color:#e8d104">▓</span><span style="color:#c6a706">▒</span><span style="color:#d3ab01">▒</span><span style="color:#fee902">▓</span><span style="color:#d5ca21">▒</span><span style="color:#3b6371">░</span><span style="color:#396270">░</span><span style="color:#446873">░</span><span style="color:#476973">░</span><span style="color:#456670">░</span><span style="color:#517579">░</span><span style="color:#608787">░</span><span style="color:#51777a">░</span><span style="color:#426972">░</span><span style="color:#aadbda">▓</span><br><span style="color:#cec7c4">▓</span><span style="color:#a3b0af">▒</span><span style="color:#5a7478">░</span><span style="color:#3a4e59">░</span><span style="color:#3d4f5b">░</span><span style="color:#4f5463">░</span><span style="color:#5a5866">░</span><span style="color:#956272">░</span><span style="color:#fc8b92">▒</span><span style="color:#fcdfd8">▓</span><span style="color:#fcf4f0">▓</span><span style="color:#fccec5">▓</span><span style="color:#d57d8b">▒</span><span style="color:#4f697c">░</span><span style="color:#476b7d">░</span><span style="color:#4f7482">░</span><span style="color:#63858e">░</span><span style="color:#668892">░</span><span style="color:#598693">░</span><span style="color:#518a99">░</span><span style="color:#525f5d">░</span><span style="color:#221912"> </span><span style="color:#10110f"> </span><span style="color:#0a0b0c"> </span><span style="color:#070707"> </span><span style="color:#090602"> </span><span style="color:#140f0b"> </span><span style="color:#24211a"> </span><span style="color:#15120d"> </span><span style="color:#0b0c0b"> </span><span style="color:#11191b"> </span><span style="color:#132f35"> </span><span style="color:#101e24"> </span><span style="color:#1b2628"> </span><span style="color:#272c28"> </span><span style="color:#6e5428">░</span><span style="color:#907631">░</span><span style="color:#996a12">░</span><span style="color:#a2620c">░</span><span style="color:#b0700d">░</span><span style="color:#e1b61c">▒</span><span style="color:#cf9f24">▒</span><span style="color:#f0d567">▓</span><span style="color:#c28408">▒</span><span style="color:#7f5414">░</span><span style="color:#352208"> </span><span style="color:#1f150b"> </span><span style="color:#131c1e"> </span><span style="color:#0e0e0c"> </span><span style="color:#070604"> </span><span style="color:#070404"> </span><span style="color:#272117"> </span><span style="color:#100b06"> </span><span style="color:#020202"> </span><span style="color:#050503"> </span><span style="color:#0d0a07"> </span><span style="color:#342413"> </span><span style="color:#b79714">▒</span><span style="color:#805402">░</span><span style="color:#d3ad05">▒</span><span style="color:#432304"> </span><span style="color:#edd602">▓</span><span style="color:#e5d103">▓</span><span style="color:#957403">░</span><span style="color:#6d4b05">░</span><span style="color:#8f7107">░</span><span style="color:#ebdb03">▓</span><span style="color:#684c0d">░</span><span style="color:#171a1c"> </span><span style="color:#694f0b">░</span><span style="color:#767032">░</span><span style="color:#3c6673">░</span><span style="color:#456975">░</span><span style="color:#486a76">░</span><span style="color:#42646e">░</span><span style="color:#41636d">░</span><span style="color:#4b6e77">░</span><span style="color:#51777a">░</span><span style="color:#4f767b">░</span><span style="color:#a2d4d4">▓</span><br><span style="color:#e5a8a1">▒</span><span style="color:#beb1af">▒</span><span style="color:#688082">░</span><span style="color:#3f535e">░</span><span style="color:#425360">░</span><span style="color:#545866">░</span><span style="color:#5e5c6a">░</span><span style="color:#9e6676">░</span><span style="color:#fc8f94">▒</span><span style="color:#fcdbd2">▓</span><span style="color:#fcebe4">▓</span><span style="color:#fcc4ba">▓</span><span style="color:#d07c8a">▒</span><span style="color:#4f6a7b">░</span><span style="color:#486c7e">░</span><span style="color:#517684">░</span><span style="color:#64868f">░</span><span style="color:#678a93">▒</span><span style="color:#5b8795">░</span><span style="color:#568390">░</span><span style="color:#3f372e"> </span><span style="color:#110f0c"> </span><span style="color:#0f100f"> </span><span style="color:#0d1011"> </span><span style="color:#080a0c"> </span><span style="color:#020202"> </span><span style="color:#110d08"> </span><span style="color:#0f0c08"> </span><span style="color:#110e09"> </span><span style="color:#100f0f"> </span><span style="color:#151615"> </span><span style="color:#112327"> </span><span style="color:#101a1c"> </span><span style="color:#191a19"> </span><span style="color:#262017"> </span><span style="color:#56350f"> </span><span style="color:#6a3e10">░</span><span style="color:#7c4208">░</span><span style="color:#b77711">░</span><span style="color:#d09513">▒</span><span style="color:#edd05a">▓</span><span style="color:#d1961c">▒</span><span style="color:#cc9316">▒</span><span style="color:#854909">░</span><span style="color:#4b2a0f"> </span><span style="color:#221609"> </span><span style="color:#151009"> </span><span style="color:#0e1516"> </span><span style="color:#14100b"> </span><span style="color:#130d07"> </span><span style="color:#0d0803"> </span><span style="color:#150d05"> </span><span style="color:#0a0703"> </span><span style="color:#030303"> </span><span style="color:#070707"> </span><span style="color:#090806"> </span><span style="color:#0d0803"> </span><span style="color:#382815"> </span><span style="color:#472401"> </span><span style="color:#cf8b0a">▒</span><span style="color:#c98e3e">▒</span><span style="color:#daa90f">▒</span><span style="color:#c19d03">▒</span><span style="color:#c2a602">▒</span><span style="color:#c4a307">▒</span><span style="color:#d4c104">▒</span><span style="color:#c4aa0a">▒</span><span style="color:#1a1919"> </span><span style="color:#122229"> </span><span style="color:#0d191e"> </span><span style="color:#0c1115"> </span><span style="color:#32505a">░</span><span style="color:#466a77">░</span><span style="color:#4a6b76">░</span><span style="color:#44656f">░</span><span style="color:#41636d">░</span><span style="color:#4a6d75">░</span><span style="color:#52777c">░</span><span style="color:#4c737a">░</span><span style="color:#9acbcd">▒</span><br><span style="color:#c0d3d1">▓</span><span style="color:#a5bebc">▒</span><span style="color:#638184">░</span><span style="color:#76999a">▒</span><span style="color:#a0c7c2">▒</span><span style="color:#acccca">▓</span><span style="color:#9bb9b8">▒</span><span style="color:#b0848f">▒</span><span style="color:#fb848c">▒</span><span style="color:#fcab9d">▓</span><span style="color:#fcb2a3">▓</span><span style="color:#fc9997">▒</span><span style="color:#ca7688">▒</span><span style="color:#506d7f">░</span><span style="color:#497080">░</span><span style="color:#537a88">░</span><span style="color:#688992">▒</span><span style="color:#6a8d95">▒</span><span style="color:#608995">░</span><span style="color:#655238">░</span><span style="color:#492e14"> </span><span style="color:#37240f"> </span><span style="color:#3f2c11"> </span><span style="color:#292113"> </span><span style="color:#030405"> </span><span style="color:#000000"> </span><span style="color:#050503"> </span><span style="color:#0a0905"> </span><span style="color:#110f0a"> </span><span style="color:#100f0c"> </span><span style="color:#181614"> </span><span style="color:#131d1e"> </span><span style="color:#151614"> </span><span style="color:#201b12"> </span><span style="color:#332011"> </span><span style="color:#5e2403"> </span><span style="color:#a8660c">░</span><span style="color:#cd8e10">▒</span><span style="color:#e7c151">▓</span><span style="color:#dca731">▒</span><span style="color:#c7870f">▒</span><span style="color:#a15f0c">░</span><span style="color:#652904"> </span><span style="color:#471803"> </span><span style="color:#35190b"> </span><span style="color:#1e1307"> </span><span style="color:#120c07"> </span><span style="color:#0d1213"> </span><span style="color:#130f0a"> </span><span style="color:#0d0904"> </span><span style="color:#100b06"> </span><span style="color:#060500"> </span><span style="color:#010101"> </span><span style="color:#020403"> </span><span style="color:#271c0d"> </span><span style="color:#2f1c09"> </span><span style="color:#27180a"> </span><span style="color:#442e17"> </span><span style="color:#6c4b1c">░</span><span style="color:#7b7570">░</span><span style="color:#7c99aa">▒</span><span style="color:#6390a0">▒</span><span style="color:#647d7b">░</span><span style="color:#dec428">▒</span><span style="color:#c08c03">▒</span><span style="color:#271e16"> </span><span style="color:#12191e"> </span><span style="color:#0d0e10"> </span><span style="color:#000102"> </span><span style="color:#050809"> </span><span style="color:#050508"> </span><span style="color:#060507"> </span><span style="color:#3b545c">░</span><span style="color:#506f7a">░</span><span style="color:#496873">░</span><span style="color:#476a73">░</span><span style="color:#577d7f">░</span><span style="color:#5e8585">░</span><span style="color:#50767b">░</span><span style="color:#91c4c4">▒</span><br><span style="color:#567579">░</span><span style="color:#58777b">░</span><span style="color:#58767b">░</span><span style="color:#b9e0db">▓</span><span style="color:#edfcfa">▓</span><span style="color:#f7fefe">▓</span><span style="color:#d9f2ef">▓</span><span style="color:#97b2b5">▒</span><span style="color:#a4adc0">▒</span><span style="color:#c4d5e4">▓</span><span style="color:#cddeeb">▓</span><span style="color:#b9c6d6">▓</span><span style="color:#798e9f">▒</span><span style="color:#4f7081">░</span><span style="color:#4c7382">░</span><span style="color:#567d8a">░</span><span style="color:#688a93">▒</span><span style="color:#6b8f98">▒</span><span style="color:#716e5a">░</span><span style="color:#5c3814"> </span><span style="color:#503313"> </span><span style="color:#463316"> </span><span style="color:#3a2a12"> </span><span style="color:#080908"> </span><span style="color:#010101"> </span><span style="color:#000000"> </span><span style="color:#010101"> </span><span style="color:#070604"> </span><span style="color:#100f0b"> </span><span style="color:#110f0c"> </span><span style="color:#1c1715"> </span><span style="color:#161919"> </span><span style="color:#1f180e"> </span><span style="color:#37240c"> </span><span style="color:#7b4f10">░</span><span style="color:#c89314">▒</span><span style="color:#ddb439">▒</span><span style="color:#e9c24d">▓</span><span style="color:#c7840c">▒</span><span style="color:#c88b12">▒</span><span style="color:#966112">░</span><span style="color:#7b470a">░</span><span style="color:#693706">░</span><span style="color:#542805"> </span><span style="color:#3d1b08"> </span><span style="color:#291909"> </span><span style="color:#150e06"> </span><span style="color:#0f100f"> </span><span style="color:#15100a"> </span><span style="color:#0b0903"> </span><span style="color:#090603"> </span><span style="color:#000000"> </span><span style="color:#000000"> </span><span style="color:#000000"> </span><span style="color:#070908"> </span><span style="color:#281a09"> </span><span style="color:#3b240d"> </span><span style="color:#452a0d"> </span><span style="color:#6b481c">░</span><span style="color:#86978d">▒</span><span style="color:#739aaa">▒</span><span style="color:#6292a0">▒</span><span style="color:#528392">░</span><span style="color:#4d7e8c">░</span><span style="color:#40565a">░</span><span style="color:#160c07"> </span><span style="color:#0f1314"> </span><span style="color:#090c10"> </span><span style="color:#030303"> </span><span style="color:#020101"> </span><span style="color:#010100"> </span><span style="color:#1b1c1c"> </span><span style="color:#818383">▒</span><span style="color:#a39288">▒</span><span style="color:#6f797b">░</span><span style="color:#446572">░</span><span style="color:#43656f">░</span><span style="color:#43656f">░</span><span style="color:#446972">░</span><span style="color:#88b9ba">▒</span><br><span style="color:#51b4bb">▒</span><span style="color:#4da3ab">▒</span><span style="color:#5d9a9f">▒</span><span style="color:#c0e6e1">▓</span><span style="color:#f1fcfb">▓</span><span style="color:#f8fefe">▓</span><span style="color:#d7f2ee">▓</span><span style="color:#8dadaf">▒</span><span style="color:#779baa">▒</span><span style="color:#8cb8c8">▒</span><span style="color:#98bfca">▒</span><span style="color:#b0b7b3">▒</span><span style="color:#a69c8c">▒</span><span style="color:#a69378">▒</span><span style="color:#a99777">▒</span><span style="color:#a89d92">▒</span><span style="color:#aaa9cd">▒</span><span style="color:#84b2de">▒</span><span style="color:#31444b"> </span><span style="color:#131e20"> </span><span style="color:#121110"> </span><span style="color:#131210"> </span><span style="color:#0b0b0a"> </span><span style="color:#040505"> </span><span style="color:#000000"> </span><span style="color:#010100"> </span><span style="color:#151715"> </span><span style="color:#060504"> </span><span style="color:#0e0d0a"> </span><span style="color:#19140f"> </span><span style="color:#1a1816"> </span><span style="color:#151511"> </span><span style="color:#271a0b"> </span><span style="color:#4c300a"> </span><span style="color:#ab7613">░</span><span style="color:#f2db70">▓</span><span style="color:#ddac23">▒</span><span style="color:#ecc739">▓</span><span style="color:#ecc636">▓</span><span style="color:#e5be33">▒</span><span style="color:#e6be33">▒</span><span style="color:#e3bb32">▒</span><span style="color:#dfb32e">▒</span><span style="color:#d2a126">▒</span><span style="color:#a76e12">░</span><span style="color:#351f08"> </span><span style="color:#170f06"> </span><span style="color:#100f0c"> </span><span style="color:#16110a"> </span><span style="color:#100a05"> </span><span style="color:#090703"> </span><span style="color:#251409"> </span><span style="color:#060201"> </span><span style="color:#000000"> </span><span style="color:#050505"> </span><span style="color:#0a0a09"> </span><span style="color:#0d0a05"> </span><span style="color:#120b05"> </span><span style="color:#21190d"> </span><span style="color:#4c666e">░</span><span style="color:#729dab">▒</span><span style="color:#6596a4">▒</span><span style="color:#558896">░</span><span style="color:#568795">░</span><span style="color:#6b99a3">▒</span><span style="color:#39413e"> </span><span style="color:#0a0401"> </span><span style="color:#190901"> </span><span style="color:#070301"> </span><span style="color:#020001"> </span><span style="color:#111314"> </span><span style="color:#4d6f7b">░</span><span style="color:#b49e93">▒</span><span style="color:#ddaf9b">▒</span><span style="color:#a6928b">▒</span><span style="color:#536b77">░</span><span style="color:#616977">░</span><span style="color:#76697a">░</span><span style="color:#836b7b">░</span><span style="color:#8f8592">▒</span><br><span style="color:#55aeb6">▒</span><span style="color:#60c4c9">▒</span><span style="color:#71c4c8">▒</span><span style="color:#bce4e0">▓</span><span style="color:#e3f9f6">▓</span><span style="color:#e8f9f8">▓</span><span style="color:#d2e5dc">▓</span><span style="color:#c7a881">▒</span><span style="color:#ae8858">▒</span><span style="color:#717363">░</span><span style="color:#4c6f71">░</span><span style="color:#4a7b7b">░</span><span style="color:#84926e">▒</span><span style="color:#f4d925">▓</span><span style="color:#d4c946">▒</span><span style="color:#367b89">░</span><span style="color:#538888">░</span><span style="color:#69592e">░</span><span style="color:#161f21"> </span><span style="color:#091214"> </span><span style="color:#0a1213"> </span><span style="color:#080a09"> </span><span style="color:#040404"> </span><span style="color:#000000"> </span><span style="color:#030200"> </span><span style="color:#96969a">▒</span><span style="color:#8b8980">▒</span><span style="color:#0d0b08"> </span><span style="color:#16120f"> </span><span style="color:#1d1815"> </span><span style="color:#121415"> </span><span style="color:#12120e"> </span><span style="color:#1f1911"> </span><span style="color:#36260d"> </span><span style="color:#8e5e12">░</span><span style="color:#c08815">▒</span><span style="color:#c68c16">▒</span><span style="color:#c78b13">▒</span><span style="color:#c08715">▒</span><span style="color:#bd8212">▒</span><span style="color:#c89018">▒</span><span style="color:#cc951b">▒</span><span style="color:#c99118">▒</span><span style="color:#bd8a1c">▒</span><span style="color:#7d4c11">░</span><span style="color:#271708"> </span><span style="color:#120d06"> </span><span style="color:#0d0d0b"> </span><span style="color:#0c0a05"> </span><span style="color:#1b150a"> </span><span style="color:#1e1606"> </span><span style="color:#392004"> </span><span style="color:#341907"> </span><span style="color:#0e0600"> </span><span style="color:#000000"> </span><span style="color:#050505"> </span><span style="color:#070707"> </span><span style="color:#070a0a"> </span><span style="color:#0a171b"> </span><span style="color:#13130f"> </span><span style="color:#586e6e">░</span><span style="color:#73a5b0">▒</span><span style="color:#9cc9c9">▒</span><span style="color:#bde0e0">▓</span><span style="color:#d4f0f1">▓</span><span style="color:#def5f5">▓</span><span style="color:#ddf5f5">▓</span><span style="color:#c0e1df">▓</span><span style="color:#6e9ba1">▒</span><span style="color:#507c89">░</span><span style="color:#4f7986">░</span><span style="color:#557a86">░</span><span style="color:#808489">▒</span><span style="color:#af928f">▒</span><span style="color:#8f7d86">▒</span><span style="color:#796f80">░</span><span style="color:#6f6d7c">░</span><span style="color:#5c6e7d">░</span><span style="color:#4d7785">░</span><span style="color:#456f7b">░</span><br><span style="color:#5e696b">░</span><span style="color:#536369">░</span><span style="color:#618184">░</span><span style="color:#beddd7">▓</span><span style="color:#f3e3b6">▓</span><span style="color:#e6ca31">▓</span><span style="color:#eddc05">▓</span><span style="color:#fdf201">▓</span><span style="color:#f7e207">▓</span><span style="color:#78681a">░</span><span style="color:#191a19"> </span><span style="color:#111012"> </span><span style="color:#121416"> </span><span style="color:#5a4515">░</span><span style="color:#f6d908">▓</span><span style="color:#354846">░</span><span style="color:#312a23"> </span><span style="color:#152327"> </span><span style="color:#0c252b"> </span><span style="color:#060809"> </span><span style="color:#060605"> </span><span style="color:#010202"> </span><span style="color:#000000"> </span><span style="color:#040200"> </span><span style="color:#8e7f1b">░</span><span style="color:#a2af5e">▒</span><span style="color:#38362c"> </span><span style="color:#131212"> </span><span style="color:#1b1714"> </span><span style="color:#111211"> </span><span style="color:#101211"> </span><span style="color:#101312"> </span><span style="color:#121615"> </span><span style="color:#191813"> </span><span style="color:#2a1308"> </span><span style="color:#411a08"> </span><span style="color:#522509"> </span><span style="color:#4d1e05"> </span><span style="color:#351405"> </span><span style="color:#361505"> </span><span style="color:#572708"> </span><span style="color:#562609"> </span><span style="color:#4b200a"> </span><span style="color:#260d03"> </span><span style="color:#1d0f08"> </span><span style="color:#130e07"> </span><span style="color:#0a0907"> </span><span style="color:#090909"> </span><span style="color:#080705"> </span><span style="color:#201910"> </span><span style="color:#130d07"> </span><span style="color:#c7b004">▒</span><span style="color:#997b03">░</span><span style="color:#41200a"> </span><span style="color:#100702"> </span><span style="color:#000000"> </span><span style="color:#030405"> </span><span style="color:#06090a"> </span><span style="color:#060706"> </span><span style="color:#060c0e"> </span><span style="color:#101718"> </span><span style="color:#627e80">░</span><span style="color:#afd8d8">▓</span><span style="color:#e1e7ef">▓</span><span style="color:#f7ebfa">▓</span><span style="color:#fbecfc">▓</span><span style="color:#fae7fa">▓</span><span style="color:#dfcfe1">▓</span><span style="color:#8199a6">▒</span><span style="color:#5d8590">░</span><span style="color:#8faaaa">▒</span><span style="color:#becdc5">▓</span><span style="color:#cad5ce">▓</span><span style="color:#98cfd5">▒</span><span style="color:#74dce9">▒</span><span style="color:#7be8f2">▓</span><span style="color:#80eff8">▓</span><span style="color:#99f7f9">▓</span><span style="color:#abfafc">▓</span><span style="color:#80dae5">▓</span><br><span style="color:#59696c">░</span><span style="color:#556569">░</span><span style="color:#5d5852">░</span><span style="color:#5e422f">░</span><span style="color:#26211e"> </span><span style="color:#191b1e"> </span><span style="color:#151c22"> </span><span style="color:#162025"> </span><span style="color:#2f2b1c"> </span><span style="color:#c8ae06">▒</span><span style="color:#e6d303">▓</span><span style="color:#272316"> </span><span style="color:#42391d"> </span><span style="color:#fbeb01">▓</span><span style="color:#5f5825">░</span><span style="color:#282f30"> </span><span style="color:#1b1a16"> </span><span style="color:#0c2126"> </span><span style="color:#051217"> </span><span style="color:#010203"> </span><span style="color:#000000"> </span><span style="color:#000000"> </span><span style="color:#13100e"> </span><span style="color:#2e5760">░</span><span style="color:#7f8f54">▒</span><span style="color:#edda1a">▓</span><span style="color:#312a09"> </span><span style="color:#100d0b"> </span><span style="color:#0e0e0c"> </span><span style="color:#0c0b08"> </span><span style="color:#0d0d0a"> </span><span style="color:#101416"> </span><span style="color:#0f1819"> </span><span style="color:#131717"> </span><span style="color:#0e0704"> </span><span style="color:#2f1507"> </span><span style="color:#422009"> </span><span style="color:#371808"> </span><span style="color:#231107"> </span><span style="color:#251408"> </span><span style="color:#48260b"> </span><span style="color:#42210b"> </span><span style="color:#2f1608"> </span><span style="color:#1e0b04"> </span><span style="color:#1c130d"> </span><span style="color:#090906"> </span><span style="color:#090909"> </span><span style="color:#050401"> </span><span style="color:#030301"> </span><span style="color:#080703"> </span><span style="color:#0c0905"> </span><span style="color:#130b07"> </span><span style="color:#775d02">░</span><span style="color:#f4df01">▓</span><span style="color:#977c09">░</span><span style="color:#170a04"> </span><span style="color:#010100"> </span><span style="color:#010102"> </span><span style="color:#020507"> </span><span style="color:#071215"> </span><span style="color:#060b0d"> </span><span style="color:#1c1915"> </span><span style="color:#92b5b8">▒</span><span style="color:#c6bfd4">▓</span><span style="color:#e6addd">▓</span><span style="color:#ebace2">▓</span><span style="color:#e6a8db">▓</span><span style="color:#c39ac0">▒</span><span style="color:#778998">▒</span><span style="color:#8aa7a9">▒</span><span style="color:#e4e9e1">▓</span><span style="color:#fdfdfa">▓</span><span style="color:#fbfdfa">▓</span><span style="color:#d7fcfe">▓</span><span style="color:#b3fefd">▓</span><span style="color:#aefdfd">▓</span><span style="color:#98fbfd">▓</span><span style="color:#a9fcfc">▓</span><span style="color:#b8fcfc">▓</span><span style="color:#8cdee8">▓</span><br><span style="color:#76806b">░</span><span style="color:#f6dc0d">▓</span><span style="color:#f0dd02">▓</span><span style="color:#ba990a">▒</span><span style="color:#583c11"> </span><span style="color:#161414"> </span><span style="color:#111317"> </span><span style="color:#101417"> </span><span style="color:#0f1114"> </span><span style="color:#101010"> </span><span style="color:#a98904">▒</span><span style="color:#e0c009">▒</span><span style="color:#2b3233"> </span><span style="color:#6f682c">░</span><span style="color:#f5e706">▓</span><span style="color:#4b3a1d"> </span><span style="color:#131d20"> </span><span style="color:#0d242a"> </span><span style="color:#06171d"> </span><span style="color:#010509"> </span><span style="color:#060605"> </span><span style="color:#1b140d"> </span><span style="color:#323831"> </span><span style="color:#dfca17">▒</span><span style="color:#c0ad17">▒</span><span style="color:#314443"> </span><span style="color:#19140f"> </span><span style="color:#120d08"> </span><span style="color:#0a0a08"> </span><span style="color:#0d0d0c"> </span><span style="color:#101315"> </span><span style="color:#0e1415"> </span><span style="color:#0e1516"> </span><span style="color:#191816"> </span><span style="color:#1c0f05"> </span><span style="color:#3d2c11"> </span><span style="color:#5c502d">░</span><span style="color:#4a3211"> </span><span style="color:#1c1107"> </span><span style="color:#211b0e"> </span><span style="color:#5a5230">░</span><span style="color:#483515"> </span><span style="color:#301d0a"> </span><span style="color:#221107"> </span><span style="color:#24170d"> </span><span style="color:#060605"> </span><span style="color:#080a09"> </span><span style="color:#0e0b05"> </span><span style="color:#010100"> </span><span style="color:#040301"> </span><span style="color:#18100a"> </span><span style="color:#110904"> </span><span style="color:#0e0603"> </span><span style="color:#100502"> </span><span style="color:#180a04"> </span><span style="color:#452c0d"> </span><span style="color:#23150c"> </span><span style="color:#0c0908"> </span><span style="color:#07151a"> </span><span style="color:#0b2026"> </span><span style="color:#0a1619"> </span><span style="color:#0d0f10"> </span><span style="color:#566769">░</span><span style="color:#709ba5">▒</span><span style="color:#70a3b0">▒</span><span style="color:#7cbdcb">▒</span><span style="color:#86c6d3">▒</span><span style="color:#7fb3be">▒</span><span style="color:#6e98a3">▒</span><span style="color:#84a3a7">▒</span><span style="color:#d9dfd4">▓</span><span style="color:#f4f3e9">▓</span><span style="color:#edece3">▓</span><span style="color:#bdd8d8">▓</span><span style="color:#76ccda">▒</span><span style="color:#6ac0cf">▒</span><span style="color:#5faab9">▒</span><span style="color:#5d9ca9">▒</span><span style="color:#60909b">▒</span><span style="color:#c2a487">▒</span><br><span style="color:#5d554d">░</span><span style="color:#322116"> </span><span style="color:#2c1d12"> </span><span style="color:#37280d"> </span><span style="color:#bb9308">▒</span><span style="color:#fced00">▓</span><span style="color:#d9b307">▒</span><span style="color:#26180a"> </span><span style="color:#0d0a09"> </span><span style="color:#0c0c0c"> </span><span style="color:#271d11"> </span><span style="color:#e8d302">▓</span><span style="color:#a28d14">▒</span><span style="color:#1c292f"> </span><span style="color:#45382b"> </span><span style="color:#1d1b1a"> </span><span style="color:#11262c"> </span><span style="color:#0e252a"> </span><span style="color:#050e13"> </span><span style="color:#010204"> </span><span style="color:#0b0907"> </span><span style="color:#2c1e14"> </span><span style="color:#d9c709">▒</span><span style="color:#b19313">▒</span><span style="color:#202a2d"> </span><span style="color:#ab9716">▒</span><span style="color:#655509">░</span><span style="color:#130e08"> </span><span style="color:#0b0b09"> </span><span style="color:#101112"> </span><span style="color:#0e1213"> </span><span style="color:#0e1414"> </span><span style="color:#141a1a"> </span><span style="color:#060402"> </span><span style="color:#180c06"> </span><span style="color:#2b1d0e"> </span><span style="color:#4f422c">░</span><span style="color:#422f19"> </span><span style="color:#332717"> </span><span style="color:#2d271a"> </span><span style="color:#483822"> </span><span style="color:#2c180a"> </span><span style="color:#1d0c05"> </span><span style="color:#1b0d06"> </span><span style="color:#342213"> </span><span style="color:#050503"> </span><span style="color:#060606"> </span><span style="color:#130f09"> </span><span style="color:#060501"> </span><span style="color:#010100"> </span><span style="color:#372e0d"> </span><span style="color:#e3d503">▓</span><span style="color:#371f03"> </span><span style="color:#261202"> </span><span style="color:#e1ca02">▒</span><span style="color:#8f8548">▒</span><span style="color:#442611"> </span><span style="color:#110c0a"> </span><span style="color:#060c10"> </span><span style="color:#0a1e23"> </span><span style="color:#08181c"> </span><span style="color:#070c0f"> </span><span style="color:#292723"> </span><span style="color:#7fa1aa">▒</span><span style="color:#7ba2ad">▒</span><span style="color:#8ab7c0">▒</span><span style="color:#8fc0c6">▒</span><span style="color:#8bb7bc">▒</span><span style="color:#93b6b8">▒</span><span style="color:#92b0af">▒</span><span style="color:#93afab">▒</span><span style="color:#9bb0ab">▒</span><span style="color:#949d99">▒</span><span style="color:#838585">▒</span><span style="color:#727a7f">░</span><span style="color:#62757c">░</span><span style="color:#6b7b80">░</span><span style="color:#69757b">░</span><span style="color:#5d656c">░</span><span style="color:#5e6369">░</span><br><span style="color:#412a18"> </span><span style="color:#26170f"> </span><span style="color:#160f0d"> </span><span style="color:#0f0d0e"> </span><span style="color:#0e0d0d"> </span><span style="color:#100d0d"> </span><span style="color:#754e06">░</span><span style="color:#fbdc01">▓</span><span style="color:#653f06">░</span><span style="color:#1c0e09"> </span><span style="color:#291913"> </span><span style="color:#654a0f">░</span><span style="color:#f6dd05">▓</span><span style="color:#2c241d"> </span><span style="color:#5c3915"> </span><span style="color:#4b3a1f"> </span><span style="color:#0f2428"> </span><span style="color:#09181d"> </span><span style="color:#02050a"> </span><span style="color:#000102"> </span><span style="color:#110c07"> </span><span style="color:#8d7b0d">░</span><span style="color:#bca20a">▒</span><span style="color:#1a1e21"> </span><span style="color:#8d7614">░</span><span style="color:#e4d300">▓</span><span style="color:#4b2f13"> </span><span style="color:#130b07"> </span><span style="color:#131210"> </span><span style="color:#0c0c0b"> </span><span style="color:#0a0a08"> </span><span style="color:#0e0f11"> </span><span style="color:#111412"> </span><span style="color:#170b04"> </span><span style="color:#381f0c"> </span><span style="color:#3f290f"> </span><span style="color:#4a2d0f"> </span><span style="color:#331c08"> </span><span style="color:#1a0e06"> </span><span style="color:#1c1308"> </span><span style="color:#492c0f"> </span><span style="color:#44250b"> </span><span style="color:#321909"> </span><span style="color:#2e1709"> </span><span style="color:#281b10"> </span><span style="color:#050504"> </span><span style="color:#030303"> </span><span style="color:#050403"> </span><span style="color:#352a1c"> </span><span style="color:#100b05"> </span><span style="color:#23170f"> </span><span style="color:#230f03"> </span><span style="color:#e7cd02">▒</span><span style="color:#d1b202">▒</span><span style="color:#885629">░</span><span style="color:#baa89e">▒</span><span style="color:#462f21"> </span><span style="color:#150b05"> </span><span style="color:#05060a"> </span><span style="color:#0a1d21"> </span><span style="color:#0a1c22"> </span><span style="color:#0c1415"> </span><span style="color:#3d2810"> </span><span style="color:#736952">░</span><span style="color:#809ba4">▒</span><span style="color:#9da6a7">▒</span><span style="color:#e1b7a4">▓</span><span style="color:#e1b8a5">▓</span><span style="color:#b0b5ae">▒</span><span style="color:#99aba8">▒</span><span style="color:#749091">▒</span><span style="color:#60848c">░</span><span style="color:#588089">░</span><span style="color:#517984">░</span><span style="color:#456b76">░</span><span style="color:#3f626b">░</span><span style="color:#4a666d">░</span><span style="color:#5d6d74">░</span><span style="color:#60676d">░</span><span style="color:#5f6269">░</span><br><span style="color:#e8c903">▒</span><span style="color:#fde600">▓</span><span style="color:#fcdd01">▓</span><span style="color:#e2b703">▒</span><span style="color:#755305">░</span><span style="color:#2b1d09"> </span><span style="color:#100908"> </span><span style="color:#2d1805"> </span><span style="color:#deb401">▒</span><span style="color:#c59504">▒</span><span style="color:#331b0f"> </span><span style="color:#1b1515"> </span><span style="color:#e3c604">▒</span><span style="color:#915e13">░</span><span style="color:#513211"> </span><span style="color:#4d3f1f"> </span><span style="color:#3f3c24"> </span><span style="color:#060f13"> </span><span style="color:#000103"> </span><span style="color:#030100"> </span><span style="color:#38210a"> </span><span style="color:#9a6d0a">░</span><span style="color:#2c2215"> </span><span style="color:#1f1e18"> </span><span style="color:#e2ce04">▒</span><span style="color:#826308">░</span><span style="color:#3a2212"> </span><span style="color:#331e0f"> </span><span style="color:#080806"> </span><span style="color:#090907"> </span><span style="color:#0d0d0d"> </span><span style="color:#111312"> </span><span style="color:#0c0d0b"> </span><span style="color:#010000"> </span><span style="color:#100705"> </span><span style="color:#1d0e09"> </span><span style="color:#1c1610"> </span><span style="color:#181915"> </span><span style="color:#181c1c"> </span><span style="color:#151916"> </span><span style="color:#171611"> </span><span style="color:#160f09"> </span><span style="color:#130905"> </span><span style="color:#0c0403"> </span><span style="color:#0b0a08"> </span><span style="color:#0e0d0a"> </span><span style="color:#030301"> </span><span style="color:#000000"> </span><span style="color:#030202"> </span><span style="color:#3d3529"> </span><span style="color:#3c2a16"> </span><span style="color:#1d0e05"> </span><span style="color:#130804"> </span><span style="color:#5e4005">░</span><span style="color:#e0bf17">▒</span><span style="color:#b99e9c">▒</span><span style="color:#c2a39f">▒</span><span style="color:#3b2514"> </span><span style="color:#060203"> </span><span style="color:#071114"> </span><span style="color:#0f2224"> </span><span style="color:#443519"> </span><span style="color:#34220e"> </span><span style="color:#583518"> </span><span style="color:#8e7f7f">▒</span><span style="color:#a08a8f">▒</span><span style="color:#968b8f">▒</span><span style="color:#8d878b">▒</span><span style="color:#827c7c">░</span><span style="color:#565c5b">░</span><span style="color:#6a4d52">░</span><span style="color:#f74d61">▒</span><span style="color:#ce5b71">▒</span><span style="color:#706074">░</span><span style="color:#5f525d">░</span><span style="color:#354f52">░</span><span style="color:#30484b">░</span><span style="color:#6a454b">░</span><span style="color:#fb585f">▒</span><span style="color:#e0535a">░</span><br><span style="color:#24160d"> </span><span style="color:#130c0a"> </span><span style="color:#100b09"> </span><span style="color:#110a08"> </span><span style="color:#402806"> </span><span style="color:#9e7403">░</span><span style="color:#f6c101">▒</span><span style="color:#764d02">░</span><span style="color:#160901"> </span><span style="color:#d1ac01">▒</span><span style="color:#835909">░</span><span style="color:#181210"> </span><span style="color:#ba9f05">▒</span><span style="color:#9b6f0f">░</span><span style="color:#4f3011"> </span><span style="color:#4c4022">░</span><span style="color:#181c17"> </span><span style="color:#03070a"> </span><span style="color:#150f0a"> </span><span style="color:#624b0d">░</span><span style="color:#eada02">▓</span><span style="color:#29200f"> </span><span style="color:#121212"> </span><span style="color:#52390e"> </span><span style="color:#efd104">▓</span><span style="color:#24170e"> </span><span style="color:#55341b"> </span><span style="color:#1d1008"> </span><span style="color:#070705"> </span><span style="color:#0c0c0b"> </span><span style="color:#10100f"> </span><span style="color:#11110f"> </span><span style="color:#080806"> </span><span style="color:#000000"> </span><span style="color:#030404"> </span><span style="color:#0e0e0b"> </span><span style="color:#453d23"> </span><span style="color:#544b2c">░</span><span style="color:#4e482d">░</span><span style="color:#382b13"> </span><span style="color:#34250f"> </span><span style="color:#35260e"> </span><span style="color:#0d0804"> </span><span style="color:#010101"> </span><span style="color:#000000"> </span><span style="color:#13130f"> </span><span style="color:#0c0b08"> </span><span style="color:#0f0d09"> </span><span style="color:#040402"> </span><span style="color:#0a0702"> </span><span style="color:#625527">░</span><span style="color:#f4e404">▓</span><span style="color:#d6ad01">▒</span><span style="color:#9b7802">░</span><span style="color:#5d3e1a">░</span><span style="color:#d49859">▒</span><span style="color:#7e6878">░</span><span style="color:#585f63">░</span><span style="color:#3a200b"> </span><span style="color:#1a120b"> </span><span style="color:#09181d"> </span><span style="color:#3c2f19"> </span><span style="color:#3b250d"> </span><span style="color:#452910"> </span><span style="color:#a1725b">░</span><span style="color:#ab7c71">▒</span><span style="color:#8a6e69">░</span><span style="color:#cb4747">░</span><span style="color:#ca3b3c">░</span><span style="color:#53362f"> </span><span style="color:#4f3830"> </span><span style="color:#ad3c38">░</span><span style="color:#f16f58">▒</span><span style="color:#f18c66">▒</span><span style="color:#fa664d">▒</span><span style="color:#b46848">░</span><span style="color:#7e6843">░</span><span style="color:#c24634">░</span><span style="color:#e74031">░</span><span style="color:#893737">░</span><br><span style="color:#bd9304">▒</span><span style="color:#c5a102">▒</span><span style="color:#c8a302">▒</span><span style="color:#b78a05">▒</span><span style="color:#936705">░</span><span style="color:#5e3a06"> </span><span style="color:#1b0a04"> </span><span style="color:#9c6b02">░</span><span style="color:#ce8f03">▒</span><span style="color:#9f6d05">░</span><span style="color:#cb9e05">▒</span><span style="color:#1a100b"> </span><span style="color:#907009">░</span><span style="color:#734213">░</span><span style="color:#4c3312"> </span><span style="color:#3b321c"> </span><span style="color:#0c1f23"> </span><span style="color:#02060a"> </span><span style="color:#170e07"> </span><span style="color:#20130b"> </span><span style="color:#e3bc02">▒</span><span style="color:#886106">░</span><span style="color:#140f0e"> </span><span style="color:#a27b08">░</span><span style="color:#ad8d02">▒</span><span style="color:#22150c"> </span><span style="color:#422612"> </span><span style="color:#1c120b"> </span><span style="color:#0c0c0a"> </span><span style="color:#0b0c0c"> </span><span style="color:#090c0b"> </span><span style="color:#0c0c09"> </span><span style="color:#090907"> </span><span style="color:#000000"> </span><span style="color:#000101"> </span><span style="color:#040504"> </span><span style="color:#15130a"> </span><span style="color:#1a150b"> </span><span style="color:#1b140c"> </span><span style="color:#161109"> </span><span style="color:#151008"> </span><span style="color:#110d05"> </span><span style="color:#040301"> </span><span style="color:#000000"> </span><span style="color:#000000"> </span><span style="color:#11100e"> </span><span style="color:#050504"> </span><span style="color:#060604"> </span><span style="color:#070604"> </span><span style="color:#1b140c"> </span><span style="color:#302519"> </span><span style="color:#4a2c0f"> </span><span style="color:#f7da00">▓</span><span style="color:#f7e500">▓</span><span style="color:#d1b304">▒</span><span style="color:#6f7251">░</span><span style="color:#528796">░</span><span style="color:#548390">░</span><span style="color:#525957">░</span><span style="color:#17100b"> </span><span style="color:#0b1f23"> </span><span style="color:#151e1e"> </span><span style="color:#342410"> </span><span style="color:#452b12"> </span><span style="color:#6b5d4d">░</span><span style="color:#6e6d6c">░</span><span style="color:#565d63">░</span><span style="color:#343433"> </span><span style="color:#323030"> </span><span style="color:#312f2d"> </span><span style="color:#25211c"> </span><span style="color:#252320"> </span><span style="color:#2d2b29"> </span><span style="color:#32302d"> </span><span style="color:#2c2a28"> </span><span style="color:#24201c"> </span><span style="color:#241f1c"> </span><span style="color:#252422"> </span><span style="color:#181413"> </span><span style="color:#1f2325"> </span><br><span style="color:#311c09"> </span><span style="color:#1a0e06"> </span><span style="color:#140c06"> </span><span style="color:#160d05"> </span><span style="color:#1b0f05"> </span><span style="color:#271604"> </span><span style="color:#794a05">░</span><span style="color:#eea603">▒</span><span style="color:#e49201">▒</span><span style="color:#ea9c01">▒</span><span style="color:#d69802">▒</span><span style="color:#815504">░</span><span style="color:#351f0d"> </span><span style="color:#663b16">░</span><span style="color:#1b2527"> </span><span style="color:#10313a"> </span><span style="color:#051417"> </span><span style="color:#010101"> </span><span style="color:#120c07"> </span><span style="color:#110907"> </span><span style="color:#c79c03">▒</span><span style="color:#755005">░</span><span style="color:#130c09"> </span><span style="color:#cca304">▒</span><span style="color:#927104">░</span><span style="color:#24160e"> </span><span style="color:#382112"> </span><span style="color:#1b130e"> </span><span style="color:#0c0e0d"> </span><span style="color:#0c0e0e"> </span><span style="color:#0a0e0f"> </span><span style="color:#060809"> </span><span style="color:#0a0a08"> </span><span style="color:#000101"> </span><span style="color:#030608"> </span><span style="color:#05090c"> </span><span style="color:#04090d"> </span><span style="color:#03080b"> </span><span style="color:#03080a"> </span><span style="color:#020505"> </span><span style="color:#010101"> </span><span style="color:#010203"> </span><span style="color:#030406"> </span><span style="color:#010204"> </span><span style="color:#000000"> </span><span style="color:#0b0c0a"> </span><span style="color:#050706"> </span><span style="color:#060807"> </span><span style="color:#080805"> </span><span style="color:#16120a"> </span><span style="color:#2e251a"> </span><span style="color:#1a110d"> </span><span style="color:#0e0603"> </span><span style="color:#0f0704"> </span><span style="color:#502f0b"> </span><span style="color:#888f88">▒</span><span style="color:#61aab8">▒</span><span style="color:#61a7b6">▒</span><span style="color:#5f98a4">▒</span><span style="color:#060605"> </span><span style="color:#030708"> </span><span style="color:#091e24"> </span><span style="color:#081116"> </span><span style="color:#201c13"> </span><span style="color:#5c5c53">░</span><span style="color:#5a7f8f">░</span><span style="color:#537787">░</span><span style="color:#3f6371">░</span><span style="color:#3b5d6a">░</span><span style="color:#36545e">░</span><span style="color:#253a41"> </span><span style="color:#2f3d44"> </span><span style="color:#403e47"> </span><span style="color:#4b3d45">░</span><span style="color:#3d393f"> </span><span style="color:#263037"> </span><span style="color:#25333a"> </span><span style="color:#323c44"> </span><span style="color:#332e32"> </span><span style="color:#343941"> </span><br><span style="color:#ebb006">▒</span><span style="color:#fdcc00">▓</span><span style="color:#fbcb00">▓</span><span style="color:#f9c501">▒</span><span style="color:#f6bf01">▒</span><span style="color:#f7bb01">▒</span><span style="color:#f8b401">▒</span><span style="color:#cb8304">▒</span><span style="color:#2e1402"> </span><span style="color:#692c03"> </span><span style="color:#d97b02">▒</span><span style="color:#b86f03">░</span><span style="color:#8c6610">░</span><span style="color:#151213"> </span><span style="color:#0c0a09"> </span><span style="color:#060e11"> </span><span style="color:#091213"> </span><span style="color:#080807"> </span><span style="color:#deb609">▒</span><span style="color:#190c04"> </span><span style="color:#936c04">░</span><span style="color:#b68704">▒</span><span style="color:#120a07"> </span><span style="color:#b28604">▒</span><span style="color:#a58302">░</span><span style="color:#140b07"> </span><span style="color:#24130a"> </span><span style="color:#070607"> </span><span style="color:#030303"> </span><span style="color:#060504"> </span><span style="color:#090e0f"> </span><span style="color:#282721"> </span><span style="color:#010101"> </span><span style="color:#000405"> </span><span style="color:#04090c"> </span><span style="color:#050d10"> </span><span style="color:#070f12"> </span><span style="color:#061012"> </span><span style="color:#05090c"> </span><span style="color:#020507"> </span><span style="color:#010609"> </span><span style="color:#040b11"> </span><span style="color:#040d12"> </span><span style="color:#010609"> </span><span style="color:#010103"> </span><span style="color:#1e1c15"> </span><span style="color:#070706"> </span><span style="color:#020101"> </span><span style="color:#000000"> </span><span style="color:#010101"> </span><span style="color:#120f0b"> </span><span style="color:#271404"> </span><span style="color:#a47c02">░</span><span style="color:#f8e000">▓</span><span style="color:#8e8037">░</span><span style="color:#4e94a3">▒</span><span style="color:#4a93a2">░</span><span style="color:#48909f">░</span><span style="color:#4d91a0">░</span><span style="color:#213436"> </span><span style="color:#0d181b"> </span><span style="color:#0b1a20"> </span><span style="color:#030608"> </span><span style="color:#040402"> </span><span style="color:#261f18"> </span><span style="color:#517985">░</span><span style="color:#4b7483">░</span><span style="color:#3c6571">░</span><span style="color:#345e6a">░</span><span style="color:#325d69">░</span><span style="color:#36606b">░</span><span style="color:#4c6371">░</span><span style="color:#746877">░</span><span style="color:#806979">░</span><span style="color:#636979">░</span><span style="color:#3e6877">░</span><span style="color:#356571">░</span><span style="color:#43606f">░</span><span style="color:#655a68">░</span><span style="color:#5b5563">░</span><br><span style="color:#393b3c"> </span><span style="color:#1a0f0a"> </span><span style="color:#2a1805"> </span><span style="color:#4d3001"> </span><span style="color:#573703"> </span><span style="color:#503202"> </span><span style="color:#3e2603"> </span><span style="color:#1d0e01"> </span><span style="color:#351401"> </span><span style="color:#7b3504">░</span><span style="color:#672801"> </span><span style="color:#672902"> </span><span style="color:#884202">░</span><span style="color:#231105"> </span><span style="color:#3b210c"> </span><span style="color:#473317"> </span><span style="color:#494a2f">░</span><span style="color:#212c25"> </span><span style="color:#0f2d38"> </span><span style="color:#14100f"> </span><span style="color:#3c2802"> </span><span style="color:#f6ce02">▓</span><span style="color:#392104"> </span><span style="color:#331e05"> </span><span style="color:#f3c901">▒</span><span style="color:#341d0b"> </span><span style="color:#1c1511"> </span><span style="color:#091013"> </span><span style="color:#171b18"> </span><span style="color:#050e11"> </span><span style="color:#020608"> </span><span style="color:#000101"> </span><span style="color:#010203"> </span><span style="color:#03070a"> </span><span style="color:#070c0f"> </span><span style="color:#080f12"> </span><span style="color:#081114"> </span><span style="color:#081115"> </span><span style="color:#060b0e"> </span><span style="color:#040a0d"> </span><span style="color:#04080b"> </span><span style="color:#020609"> </span><span style="color:#03080c"> </span><span style="color:#02080b"> </span><span style="color:#020a0d"> </span><span style="color:#040c11"> </span><span style="color:#010204"> </span><span style="color:#020304"> </span><span style="color:#0c0d0d"> </span><span style="color:#030509"> </span><span style="color:#070707"> </span><span style="color:#403124"> </span><span style="color:#351902"> </span><span style="color:#be792d">▒</span><span style="color:#62999f">▒</span><span style="color:#4394a3">░</span><span style="color:#418d9c">░</span><span style="color:#418493">░</span><span style="color:#1a363b"> </span><span style="color:#0d2931"> </span><span style="color:#3d3e27"> </span><span style="color:#312511"> </span><span style="color:#331f0d"> </span><span style="color:#201308"> </span><span style="color:#293c42"> </span><span style="color:#447684">░</span><span style="color:#477e8c">░</span><span style="color:#468493">░</span><span style="color:#478897">░</span><span style="color:#448795">░</span><span style="color:#437f8e">░</span><span style="color:#516f7e">░</span><span style="color:#785c6d">░</span><span style="color:#7b5363">░</span><span style="color:#4e505d">░</span><span style="color:#2b4e58">░</span><span style="color:#264c57">░</span><span style="color:#2f4d59">░</span><span style="color:#47505e">░</span><span style="color:#455663">░</span><br><span style="color:#424847">░</span><span style="color:#d49a12">▒</span><span style="color:#8b5e04">░</span><span style="color:#261204"> </span><span style="color:#120703"> </span><span style="color:#120803"> </span><span style="color:#251203"> </span><span style="color:#714502">░</span><span style="color:#b86701">░</span><span style="color:#6f3103"> </span><span style="color:#582200"> </span><span style="color:#120400"> </span><span style="color:#240b01"> </span><span style="color:#552a0e"> </span><span style="color:#5c3314"> </span><span style="color:#63421e">░</span><span style="color:#3c402b"> </span><span style="color:#091519"> </span><span style="color:#0b0903"> </span><span style="color:#0d0d09"> </span><span style="color:#0e0d0d"> </span><span style="color:#956603">░</span><span style="color:#c69902">▒</span><span style="color:#130803"> </span><span style="color:#976f06">░</span><span style="color:#3c2b0f"> </span><span style="color:#0a0d10"> </span><span style="color:#0b1417"> </span><span style="color:#0f1718"> </span><span style="color:#08171a"> </span><span style="color:#071316"> </span><span style="color:#060e12"> </span><span style="color:#040c0f"> </span><span style="color:#050b0f"> </span><span style="color:#060a0d"> </span><span style="color:#04090c"> </span><span style="color:#040708"> </span><span style="color:#040606"> </span><span style="color:#030403"> </span><span style="color:#020302"> </span><span style="color:#010202"> </span><span style="color:#010202"> </span><span style="color:#010203"> </span><span style="color:#010406"> </span><span style="color:#040b0e"> </span><span style="color:#061015"> </span><span style="color:#061317"> </span><span style="color:#051115"> </span><span style="color:#0f1617"> </span><span style="color:#05090b"> </span><span style="color:#020609"> </span><span style="color:#0a0a0a"> </span><span style="color:#757554">░</span><span style="color:#459bac">▒</span><span style="color:#4196a7">░</span><span style="color:#3f90a0">░</span><span style="color:#3e8290">░</span><span style="color:#0f1d21"> </span><span style="color:#060403"> </span><span style="color:#090e0e"> </span><span style="color:#162727"> </span><span style="color:#49351a"> </span><span style="color:#472a11"> </span><span style="color:#603f21">░</span><span style="color:#467078">░</span><span style="color:#468392">░</span><span style="color:#468593">░</span><span style="color:#3b717e">░</span><span style="color:#2d5763">░</span><span style="color:#284d58">░</span><span style="color:#274c55">░</span><span style="color:#30515d">░</span><span style="color:#455f6c">░</span><span style="color:#506d7c">░</span><span style="color:#497b8a">░</span><span style="color:#40818f">░</span><span style="color:#3c7f8c">░</span><span style="color:#3b7280">░</span><span style="color:#416271">░</span><span style="color:#38525e">░</span><br><span style="color:#2f4046"> </span><span style="color:#715937">░</span><span style="color:#f0ad04">▒</span><span style="color:#f3ac03">▒</span><span style="color:#eea803">▒</span><span style="color:#efa804">▒</span><span style="color:#d39101">▒</span><span style="color:#8b4e02">░</span><span style="color:#672e05"> </span><span style="color:#682f09"> </span><span style="color:#77462b">░</span><span style="color:#672b06"> </span><span style="color:#572102"> </span><span style="color:#622e0c"> </span><span style="color:#3d2612"> </span><span style="color:#0a0705"> </span><span style="color:#030202"> </span><span style="color:#0b0807"> </span><span style="color:#04080a"> </span><span style="color:#05080a"> </span><span style="color:#2b1c06"> </span><span style="color:#3f2204"> </span><span style="color:#583703"> </span><span style="color:#f3b602">▒</span><span style="color:#624110">░</span><span style="color:#14110e"> </span><span style="color:#080f12"> </span><span style="color:#10191b"> </span><span style="color:#050f14"> </span><span style="color:#08171c"> </span><span style="color:#051215"> </span><span style="color:#020a0e"> </span><span style="color:#02080c"> </span><span style="color:#030609"> </span><span style="color:#010204"> </span><span style="color:#000100"> </span><span style="color:#000000"> </span><span style="color:#000000"> </span><span style="color:#000000"> </span><span style="color:#000000"> </span><span style="color:#000000"> </span><span style="color:#000000"> </span><span style="color:#010102"> </span><span style="color:#020507"> </span><span style="color:#050f14"> </span><span style="color:#07181d"> </span><span style="color:#071b21"> </span><span style="color:#06181e"> </span><span style="color:#071015"> </span><span style="color:#0a0e10"> </span><span style="color:#020608"> </span><span style="color:#030405"> </span><span style="color:#242b27"> </span><span style="color:#4096a7">░</span><span style="color:#3c8fa0">░</span><span style="color:#398a9a">░</span><span style="color:#2d5e67">░</span><span style="color:#090d0e"> </span><span style="color:#071116"> </span><span style="color:#070c0d"> </span><span style="color:#0f0906"> </span><span style="color:#010000"> </span><span style="color:#190f08"> </span><span style="color:#3d2c1a"> </span><span style="color:#365961">░</span><span style="color:#2e5864">░</span><span style="color:#2b545f">░</span><span style="color:#2a535e">░</span><span style="color:#254d57">░</span><span style="color:#2d5a66">░</span><span style="color:#397684">░</span><span style="color:#3e7c8a">░</span><span style="color:#3a6876">░</span><span style="color:#314d58">░</span><span style="color:#27424b"> </span><span style="color:#1f4049"> </span><span style="color:#1e3f48"> </span><span style="color:#1f434c"> </span><span style="color:#264b55">░</span><span style="color:#2c5d67">░</span><br><span style="color:#3b6e78">░</span><span style="color:#457f8c">░</span><span style="color:#c59f30">▒</span><span style="color:#d09303">▒</span><span style="color:#9a6103">░</span><span style="color:#7e4a03">░</span><span style="color:#582d03"> </span><span style="color:#522204"> </span><span style="color:#652c04"> </span><span style="color:#57453e">░</span><span style="color:#525f6a">░</span><span style="color:#874a23">░</span><span style="color:#6b3105"> </span><span style="color:#602b04"> </span><span style="color:#592704"> </span><span style="color:#512404"> </span><span style="color:#421d04"> </span><span style="color:#3d1b04"> </span><span style="color:#512403"> </span><span style="color:#733f1c">░</span><span style="color:#596266">░</span><span style="color:#5d6f67">░</span><span style="color:#b78837">▒</span><span style="color:#cc7511">▒</span><span style="color:#45260c"> </span><span style="color:#0f0d0b"> </span><span style="color:#060d10"> </span><span style="color:#111718"> </span><span style="color:#071317"> </span><span style="color:#061013"> </span><span style="color:#02070a"> </span><span style="color:#010204"> </span><span style="color:#000000"> </span><span style="color:#000000"> </span><span style="color:#000000"> </span><span style="color:#000000"> </span><span style="color:#000000"> </span><span style="color:#000000"> </span><span style="color:#2d2804"> </span><span style="color:#251d02"> </span><span style="color:#000000"> </span><span style="color:#000000"> </span><span style="color:#010101"> </span><span style="color:#010202"> </span><span style="color:#030406"> </span><span style="color:#03070a"> </span><span style="color:#050d0f"> </span><span style="color:#061216"> </span><span style="color:#071216"> </span><span style="color:#101214"> </span><span style="color:#040507"> </span><span style="color:#020303"> </span><span style="color:#18140d"> </span><span style="color:#356e76">░</span><span style="color:#388796">░</span><span style="color:#34828f">░</span><span style="color:#337d8a">░</span><span style="color:#307582">░</span><span style="color:#2c6672">░</span><span style="color:#24464e"> </span><span style="color:#1e3b43"> </span><span style="color:#244852"> </span><span style="color:#295561">░</span><span style="color:#295765">░</span><span style="color:#295661">░</span><span style="color:#2a525d">░</span><span style="color:#264e58">░</span><span style="color:#224851"> </span><span style="color:#20454e"> </span><span style="color:#1f414b"> </span><span style="color:#1e3f47"> </span><span style="color:#203e46"> </span><span style="color:#26424b"> </span><span style="color:#2d5761">░</span><span style="color:#3a7985">░</span><span style="color:#408694">░</span><span style="color:#387785">░</span><span style="color:#27535d">░</span><span style="color:#1d3a42"> </span><span style="color:#1b363d"> </span><br>
+
+    <div id="overlay">
+        <h1>ZCASH NODE DASHBOARD</h1>
+        <p>Real-time Network Monitoring</p>
+        <p>Zebra Consensus Node</p>
+        <p>lightwalletd RPC Server</p>
+    </div>
+    <audio id="bgMusic" loop>
+        <!-- Audio placeholder - can be populated with actual audio file if needed -->
+    </audio>
+
+    <script>
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+        const effectButton = document.getElementById('effectButton');
+        const audioButton = document.getElementById('audioButton');
+        const dynamicButton = document.getElementById('dynamicButton');
+        const bgMusic = document.getElementById('bgMusic');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Mouse tracking
+        let mouse = { x: canvas.width / 2, y: canvas.height / 2 };
+        canvas.addEventListener('mousemove', (e) => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+        });
+
+        const matrixChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%^&*()_+-=[]{}|;:,.<>?│┤╡╢╖╕╣║╗╝╜╛┐└┴┬├─┼╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒╓╫╪┘┌█▄▌▐■▬▲▼◄►◊○◘◙◦☺☻♠♣♥♦♂♀♪♫☼±×÷≈≠≤≥∞∑∏√∫∂∇∅∈∉⊂⊃⊆⊇∧∨¬∀∃∄∴∵⊥∠∟⊕⊗⊙⌈⌉⌊⌋⟨⟩∪∩∖⊔⊓△▽◇◆□■▬▲△▼▽◁▷◀▶◆◇◈◉◊○◌◍◎●◐◑◒◓◔◕◖◗◘◙◚◛◜◝◞◟◠◡◢◣◤◥◦◧◨◩◪◫◬◭◮◯◰◱◲◳◴◵◶◷◸◹◺◻◼◽◾◿';
+        const numParticles = 100; // Further reduced for performance
+        const particles = [];
+
+        // Effect cycling
+        const effects = ['CLASSIC', 'WAVE', 'EXPLODE', 'MAGNETIC', 'GLITCH'];
+        let currentEffect = 3; // Changed default to MAGNETIC
+
+        effectButton.addEventListener('click', () => {
+            currentEffect = (currentEffect + 1) % effects.length;
+            effectButton.textContent = `EFFECT: ${effects[currentEffect]}`;
+        });
+
+        // Audio control
+        let musicPlaying = false;
+
+        audioButton.addEventListener('click', () => {
+            synth.toggle();
+            audioButton.textContent = synth.isPlaying ? 'AUDIO: ON' : 'AUDIO: OFF';
+        });
+
+        // Dynamic beat control
+        let dynamicBeatEnabled = true;
+
+        // Beat patterns
+        const beatPatterns = ['RETRO', 'TECHNO', 'AMBIENT', 'INDUSTRIAL'];
+        let currentBeat = 0;
+
+        dynamicButton.addEventListener('click', () => {
+            currentBeat = (currentBeat + 1) % beatPatterns.length;
+            synth.setPattern(currentBeat);
+            dynamicButton.textContent = `BEAT: ${beatPatterns[currentBeat]}`;
+        });
+
+        // Matrix effect toggle (default OFF)
+        const matrixToggle = document.getElementById('matrixToggle');
+        let matrixEffectEnabled = false;
+
+        matrixToggle.addEventListener('click', () => {
+            matrixEffectEnabled = !matrixEffectEnabled;
+            matrixToggle.textContent = matrixEffectEnabled ? 'MATRIX: ON' : 'MATRIX: OFF';
+        });
+
+        class Particle {
+            constructor() {
+                this.reset();
+                this.trail = []; // Add trail array for tail effect
+                this.maxTrail = 8; // Increased to 8 for nicer tail effect
+            }
+
+            reset() {
+                this.x = (Math.random() - 0.5) * canvas.width * 2;
+                this.y = (Math.random() - 0.5) * canvas.height * 2;
+                this.z = Math.random() * 1000 + 100;
+                this.char = matrixChars[Math.floor(Math.random() * matrixChars.length)];
+                this.speed = Math.random() * 2 + 0.5; // Reduced speed for slower movement
+                this.color = [255, 215, 0]; // Start with gold
+                this.targetColor = [255, 215, 0];
+                this.colorSpeed = 0.02;
+                this.mouseInfluence = 0;
+                this.originalSpeed = this.speed;
+                this.trail = []; // Clear trail on reset
+            }
+
+            update() {
+                // Update trail before moving
+                this.trail.unshift({ x: this.x, y: this.y, z: this.z, char: this.char });
+                if (this.trail.length > this.maxTrail) {
+                    this.trail.pop();
+                }
+
+                const dx = mouse.x - (canvas.width / 2 + (this.x / this.z) * 300);
+                const dy = mouse.y - (canvas.height / 2 + (this.y / this.z) * 300);
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const maxDistance = 400; // Increased from 200 to 400 for larger effect area
+
+                // Mouse influence based on current effect
+                switch(effects[currentEffect]) {
+                    case 'CLASSIC':
+                        this.mouseInfluence = Math.max(0, 1 - distance / maxDistance) * 1.5; // Increased multiplier
+                        break;
+                    case 'WAVE':
+                        this.mouseInfluence = Math.sin(Date.now() * 0.01 + distance * 0.01) * 0.8; // Increased amplitude
+                        break;
+                    case 'EXPLODE':
+                        if (distance < 150) { // Increased explosion radius
+                            this.speed = this.originalSpeed * 5; // Increased speed multiplier
+                            this.z -= this.speed * 3; // Increased z reduction
+                        } else {
+                            this.speed = this.originalSpeed;
+                        }
+                        break;
+                    case 'MAGNETIC':
+                        if (distance < maxDistance) {
+                            const force = (maxDistance - distance) / maxDistance;
+                            this.x += (dx / distance) * force * 5; // Increased magnetic force
+                            this.y += (dy / distance) * force * 5;
+                        }
+                        break;
+                    case 'GLITCH':
+                        if (distance < 200 && Math.random() < 0.2) { // Increased glitch radius and frequency
+                            this.char = matrixChars[Math.floor(Math.random() * matrixChars.length)];
+                            this.targetColor = [255, Math.random() * 255, Math.random() * 255];
+                            this.z -= 10; // Add z disruption for glitch effect
+                        }
+                        break;
+                }
+
+                this.z -= this.speed * (1 + this.mouseInfluence);
+
+                if (this.z <= 0) {
+                    this.reset();
+                }
+
+                // Interpolate color towards target
+                for (let i = 0; i < 3; i++) {
+                    this.color[i] += (this.targetColor[i] - this.color[i]) * this.colorSpeed;
+                }
+
+                // If close to target, pick new target
+                if (Math.abs(this.color[0] - this.targetColor[0]) < 5 &&
+                    Math.abs(this.color[1] - this.targetColor[1]) < 5 &&
+                    Math.abs(this.color[2] - this.targetColor[2]) < 5) {
+                    if (Math.random() < 0.3) { // 30% chance to go back to gold
+                        this.targetColor = [255, 215, 0];
+                    } else {
+                        this.targetColor = [Math.random() * 255, Math.random() * 255, Math.random() * 255];
+                    }
+                }
+            }
+
+            draw() {
+                const x = canvas.width / 2 + (this.x / this.z) * 300;
+                const y = canvas.height / 2 + (this.y / this.z) * 300;
+                let size = (1 - this.z / 1100) * 24 + 12; // Increased base size from 20+10 to 24+12
+
+                // Draw trail effect first (behind the main character)
+                this.trail.forEach((trailSegment, index) => {
+                    const trailX = canvas.width / 2 + (trailSegment.x / trailSegment.z) * 300;
+                    const trailY = canvas.height / 2 + (trailSegment.y / trailSegment.z) * 300;
+                    const trailSize = (1 - trailSegment.z / 1100) * 24 + 12;
+                    const trailOpacity = (this.maxTrail - index) / this.maxTrail * 0.7; // Increased opacity for nicer tail
+
+                    if (trailX > 0 && trailX < canvas.width && trailY > 0 && trailY < canvas.height) {
+                        ctx.fillStyle = `rgba(${Math.round(this.color[0])}, ${Math.round(this.color[1])}, ${Math.round(this.color[2])}, ${trailOpacity})`;
+                        ctx.font = trailSize + 'px monospace';
+                        ctx.fillText(trailSegment.char, trailX, trailY);
+                    }
+                });
+
+                // Effect-specific size modifications with more dramatic changes
+                if (effects[currentEffect] === 'WAVE') {
+                    size *= (1 + Math.sin(Date.now() * 0.005 + this.x * 0.01) * 0.6); // Increased wave amplitude
+                } else if (effects[currentEffect] === 'GLITCH' && this.mouseInfluence > 0) {
+                    size *= (1 + Math.random() * 1.2); // Increased glitch size variation
+                }
+
+                // Add glow effect for mouse-influenced particles
+                const glowIntensity = Math.min(this.mouseInfluence * 0.8, 0.6);
+
+                if (x > 0 && x < canvas.width && y > 0 && y < canvas.height) {
+                    const alpha = Math.min(1 - this.z / 1100 + glowIntensity, 1);
+
+                    // Draw glow effect
+                    if (glowIntensity > 0.1) {
+                        ctx.shadowColor = `rgba(${Math.round(this.color[0])}, ${Math.round(this.color[1])}, ${Math.round(this.color[2])}, ${glowIntensity})`;
+                        ctx.shadowBlur = glowIntensity * 10;
+                    } else {
+                        ctx.shadowBlur = 0;
+                    }
+
+                    ctx.fillStyle = `rgba(${Math.round(this.color[0])}, ${Math.round(this.color[1])}, ${Math.round(this.color[2])}, ${alpha})`;
+                    ctx.font = size + 'px monospace';
+                    ctx.fillText(this.char, x, y);
+
+                    // Reset shadow
+                    ctx.shadowBlur = 0;
+                }
+            }
+        }
+
+        for (let i = 0; i < numParticles; i++) {
+            particles.push(new Particle());
+        }
+
+        const flyingTexts = [
+            { text: 'Created by CyberAxe', x: canvas.width, y: canvas.height * 0.2, speed: 1 },
+            { text: 'www.DontPanic.biz', x: canvas.width, y: canvas.height * 0.5, speed: 1.5 },
+            { text: 'Any Support Welcome', x: canvas.width, y: canvas.height * 0.8, speed: 0.8 }
+        ];
+
+        function updateFlyingTexts() {
+            flyingTexts.forEach(item => {
+                item.x -= item.speed;
+                if (item.x < -ctx.measureText(item.text).width) {
+                    item.x = canvas.width;
+                }
+            });
+        }
+
+        function drawFlyingTexts() {
+            ctx.fillStyle = '#FFD700';
+            ctx.font = '24px monospace';
+            ctx.textAlign = 'left';
+            flyingTexts.forEach(item => {
+                ctx.fillText(item.text, item.x, item.y);
+            });
+        }
+
+        function draw() {
+            // Update stats
+            frameCount++;
+            let visibleParticles = 0;
+            const now = Date.now();
+            const elapsed = now - lastTime;
+            if (elapsed >= 1000) {
+                fps = Math.round(frameCount * 1000 / elapsed);
+                fpsCounter.textContent = fps;
+                frameCount = 0;
+                lastTime = now;
+
+                if (performance.memory) {
+                    const memoryUsedMB = Math.round(performance.memory.usedJSHeapSize / 1048576);
+                    memoryCounter.textContent = memoryUsedMB;
+                } else {
+                    memoryCounter.textContent = 'N/A';
+                }
+            }
+
+            // Create gradient background for more depth
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, 'rgba(0, 0, 0, 0.9)');
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 1)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Only update and draw particles if Matrix effect is enabled
+            if (matrixEffectEnabled) {
+                particles.forEach(particle => {
+                    particle.update();
+                    particle.draw();
+                    // Count visible particles
+                    const x = canvas.width / 2 + (particle.x / particle.z) * 300;
+                    const y = canvas.height / 2 + (particle.y / particle.z) * 300;
+                    if (x > 0 && x < canvas.width && y > 0 && y < canvas.height && particle.z > 0) {
+                        visibleParticles++;
+                    }
+                });
+            }
+
+            updateFlyingTexts();
+            drawFlyingTexts();
+
+            // Add subtle vignette effect
+            const vignette = ctx.createRadialGradient(
+                canvas.width / 2, canvas.height / 2, 0,
+                canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height) / 2
+            );
+            vignette.addColorStop(0, 'rgba(0, 0, 0, 0)');
+            vignette.addColorStop(1, 'rgba(0, 0, 0, 0.3)');
+            ctx.fillStyle = vignette;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Update particles counter
+            particlesCounter.textContent = matrixEffectEnabled ? visibleParticles : 0;
+
+            requestAnimationFrame(draw);
+        }
+
+        // FPS and Memory counter
+        let frameCount = 0;
+        let lastTime = Date.now();
+        let fps = 0;
+        const fpsCounter = document.getElementById('fpsCounter');
+        const memoryCounter = document.getElementById('memoryCounter');
+        const particlesCounter = document.getElementById('particlesCounter');
+
+        function updateStats() {
+            // Memory update only, handled in draw
+        }
+
+        // Start the animation loop
+        requestAnimationFrame(draw);
+
+        // Synth beat generator
+        class SynthBeats {
+            constructor() {
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                this.isPlaying = false;
+                this.startTime = 0;
+                this.interval = null;
+                this.currentPattern = 0;
+                this.patterns = ['retro', 'techno', 'ambient', 'industrial'];
+            }
+
+            createOscillator(frequency, type = 'square') {
+                const oscillator = this.audioContext.createOscillator();
+                const gainNode = this.audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(this.audioContext.destination);
+
+                oscillator.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
+                oscillator.type = type;
+
+                return { oscillator, gainNode };
+            }
+
+            playKick(intensity = 1) {
+                const { oscillator, gainNode } = this.createOscillator(60, 'sine');
+                const now = this.audioContext.currentTime;
+
+                gainNode.gain.setValueAtTime(0.8 * intensity, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+
+                oscillator.frequency.setValueAtTime(60, now);
+                oscillator.frequency.exponentialRampToValueAtTime(30, now + 0.1);
+
+                oscillator.start(now);
+                oscillator.stop(now + 0.2);
+            }
+
+            playSnare(intensity = 1) {
+                const { oscillator, gainNode } = this.createOscillator(200, 'sawtooth');
+                const now = this.audioContext.currentTime;
+
+                gainNode.gain.setValueAtTime(0.6 * intensity, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+
+                oscillator.start(now);
+                oscillator.stop(now + 0.15);
+            }
+
+            playBass(freq, intensity = 1) {
+                const { oscillator, gainNode } = this.createOscillator(freq, 'sawtooth');
+                const now = this.audioContext.currentTime;
+
+                gainNode.gain.setValueAtTime(0.3 * intensity, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+
+                oscillator.start(now);
+                oscillator.stop(now + 0.3);
+            }
+
+            playLead(freq, intensity = 1) {
+                const { oscillator, gainNode } = this.createOscillator(freq, 'square');
+                const now = this.audioContext.currentTime;
+
+                gainNode.gain.setValueAtTime(0.2 * intensity, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+
+                oscillator.start(now);
+                oscillator.stop(now + 0.2);
+            }
+
+            playHihat() {
+                const { oscillator, gainNode } = this.createOscillator(8000, 'square');
+                const now = this.audioContext.currentTime;
+
+                gainNode.gain.setValueAtTime(0.1, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+
+                oscillator.start(now);
+                oscillator.stop(now + 0.05);
+            }
+
+            playRetroBeat() {
+                const beatTime = (this.audioContext.currentTime - this.startTime) % 2;
+
+                if (beatTime < 0.1) {
+                    this.playKick();
+                } else if (beatTime >= 0.5 && beatTime < 0.6) {
+                    this.playSnare();
+                } else if (beatTime >= 1.0 && beatTime < 1.1) {
+                    this.playKick();
+                } else if (beatTime >= 1.5 && beatTime < 1.6) {
+                    this.playSnare();
+                }
+
+                const bassNotes = [110, 130, 146, 164];
+                const bassIndex = Math.floor(beatTime / 0.5) % bassNotes.length;
+                if (beatTime % 0.5 < 0.1) {
+                    this.playBass(bassNotes[bassIndex]);
+                }
+
+                const leadNotes = [440, 494, 523, 587, 659, 698, 784];
+                const leadIndex = Math.floor(beatTime / 0.25) % leadNotes.length;
+                if (beatTime % 0.25 < 0.05 && Math.random() < 0.7) {
+                    this.playLead(leadNotes[leadIndex]);
+                }
+            }
+
+            playTechnoBeat() {
+                const beatTime = (this.audioContext.currentTime - this.startTime) % 1; // Faster 1-second loop
+
+                if (beatTime < 0.05) {
+                    this.playKick(1.2);
+                } else if (beatTime >= 0.25 && beatTime < 0.3) {
+                    this.playSnare(1.2);
+                } else if (beatTime >= 0.5 && beatTime < 0.55) {
+                    this.playKick(1.2);
+                } else if (beatTime >= 0.75 && beatTime < 0.8) {
+                    this.playSnare(1.2);
+                }
+
+                // Hihat pattern
+                if (beatTime % 0.125 < 0.03) {
+                    this.playHihat();
+                }
+
+                // Techno bass
+                const technoBass = [55, 65, 73, 82]; // Sub-bass frequencies
+                const bassIndex = Math.floor(beatTime / 0.25) % technoBass.length;
+                if (beatTime % 0.25 < 0.08) {
+                    this.playBass(technoBass[bassIndex], 1.5);
+                }
+
+                // Arpeggiated lead
+                const arpNotes = [440, 494, 523, 587, 659, 698, 784, 880];
+                const arpIndex = Math.floor(beatTime / 0.0625) % arpNotes.length;
+                if (beatTime % 0.0625 < 0.02 && Math.random() < 0.8) {
+                    this.playLead(arpNotes[arpIndex], 0.8);
+                }
+            }
+
+            playAmbientBeat() {
+                const beatTime = (this.audioContext.currentTime - this.startTime) % 4; // Slower 4-second loop
+
+                // Sparse kicks
+                if ((beatTime < 0.1) || (beatTime >= 2.0 && beatTime < 2.1)) {
+                    this.playKick(0.6);
+                }
+
+                // Soft pads - ambient bass
+                const padNotes = [220, 247, 262, 294]; // Low frequencies for pads
+                const padIndex = Math.floor(beatTime / 1) % padNotes.length;
+                if (beatTime % 1 < 0.2) {
+                    this.playBass(padNotes[padIndex], 0.4);
+                }
+
+                // Sparse lead notes
+                const ambientNotes = [523, 587, 659, 698, 784, 880, 988];
+                if (Math.random() < 0.1) {
+                    this.playLead(ambientNotes[Math.floor(Math.random() * ambientNotes.length)], 0.3);
+                }
+            }
+
+            playIndustrialBeat() {
+                const beatTime = (this.audioContext.currentTime - this.startTime) % 1.5; // 1.5 second industrial loop
+
+                // Heavy industrial kicks
+                if (beatTime < 0.08) {
+                    this.playKick(1.5);
+                } else if (beatTime >= 0.375 && beatTime < 0.455) {
+                    this.playKick(1.3);
+                } else if (beatTime >= 0.75 && beatTime < 0.83) {
+                    this.playKick(1.5);
+                } else if (beatTime >= 1.125 && beatTime < 1.205) {
+                    this.playKick(1.3);
+                }
+
+                // Metallic snare
+                if ((beatTime >= 0.25 && beatTime < 0.33) || (beatTime >= 1.0 && beatTime < 1.08)) {
+                    this.playSnare(1.4);
+                }
+
+                // Industrial bass stabs
+                const industrialBass = [73, 82, 98, 110]; // Harsh frequencies
+                const bassIndex = Math.floor(beatTime / 0.375) % industrialBass.length;
+                if (beatTime % 0.375 < 0.1) {
+                    this.playBass(industrialBass[bassIndex], 1.2);
+                }
+
+                // Distorted lead stabs
+                const stabNotes = [220, 247, 294, 330];
+                if (beatTime % 0.1875 < 0.04 && Math.random() < 0.6) {
+                    this.playLead(stabNotes[Math.floor(Math.random() * stabNotes.length)], 1.0);
+                }
+            }
+
+            playBeat() {
+                switch(this.currentPattern) {
+                    case 0: this.playRetroBeat(); break;
+                    case 1: this.playTechnoBeat(); break;
+                    case 2: this.playAmbientBeat(); break;
+                    case 3: this.playIndustrialBeat(); break;
+                }
+            }
+
+            setPattern(patternIndex) {
+                this.currentPattern = patternIndex;
+            }
+
+            start() {
+                if (this.isPlaying) return;
+                this.isPlaying = true;
+                this.startTime = this.audioContext.currentTime;
+                this.interval = setInterval(() => this.playBeat(), 50);
+            }
+
+            stop() {
+                this.isPlaying = false;
+                if (this.interval) {
+                    clearInterval(this.interval);
+                    this.interval = null;
+                }
+            }
+
+            toggle() {
+                if (this.isPlaying) {
+                    this.stop();
+                } else {
+                    this.start();
+                }
+            }
+        }
+
+        const synth = new SynthBeats();
+
+        // Start synth beats on user interaction only (no auto-start)
+        // Audio requires user gesture due to browser autoplay policies
+        document.addEventListener('click', function initAudio() {
+            if (!synth.isPlaying) {
+                // synth.start(); // Uncomment to auto-start on first click
+            }
+            // Remove listener after first click to avoid repeated initialization
+            document.removeEventListener('click', initAudio);
+        }, { once: true });
+
+        // Initialize all fields to show "no data" state
+        function initializeAllFields() {
+            document.getElementById('timestampDisplay').textContent = 'No Data';
+            document.getElementById('peerCount').textContent = '--';
+            document.getElementById('connectionsHr').textContent = '--';
+            document.getElementById('changesHr').textContent = '--';
+            document.getElementById('cpuUsage').textContent = '--';
+            document.getElementById('ramUsage').textContent = '--';
+            document.getElementById('diskFree').textContent = '--';
+            document.getElementById('blockFiles').textContent = '--';
+            
+            document.getElementById('zebraStatus').textContent = 'unknown';
+            document.getElementById('zebraStatus').className = 'status-inactive';
+            document.getElementById('blockNum').textContent = '--';
+            
+            document.getElementById('lightwalletdStatus').textContent = 'unknown';
+            document.getElementById('lightwalletdStatus').className = 'status-inactive';
+            
+            document.getElementById('caddyStatus').textContent = 'unknown';
+            document.getElementById('caddyStatus').className = 'status-inactive';
+            
+            document.getElementById('netType').textContent = '--';
+            document.getElementById('syncTimeout').textContent = '--';
+            document.getElementById('remainingSync').textContent = '--';
+            
+            document.getElementById('domain').textContent = '--';
+            document.getElementById('dnsIP').textContent = '--';
+            document.getElementById('publicIP').textContent = '--';
+            
+            document.getElementById('syncStatus').textContent = 'No Data Available';
+            document.getElementById('lastBlockTime').textContent = '--';
+            
+            // Remove IP alarm state
+            document.getElementById('networkAccessBox').classList.remove('ip-alarm');
+            
+            document.getElementById('logContainer').innerHTML = '<div class="logline">No logs available - Node not running or unreachable</div>';
+        }
+
+        // Fetch and update JSON data
+        function fetchAndUpdateMetrics() {
+            fetch('./zebra-monitor.json')
+                .then(response => response.json())
+                .then(data => {
+                    // Parse timestamp and format as "Month Day Year Hour Min"
+                    const utcTimestamp = new Date(data.timestamp);
+                    const formattedTime = utcTimestamp.toLocaleString('en-US', {
+                        month: 'short',
+                        day: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: false,
+                        timeZone: 'UTC'
+                    });
+                    document.getElementById('timestampDisplay').textContent = formattedTime;
+                    
+                    // Update network data box
+                    document.getElementById('peerCount').textContent = data.peer_count || '--';
+                    document.getElementById('connectionsHr').textContent = data.connections_per_hour || '--';
+                    document.getElementById('changesHr').textContent = data.changes_per_hour || '--';
+                    document.getElementById('cpuUsage').textContent = data.cpu_usage ? parseFloat(data.cpu_usage).toFixed(1) + '%' : '--';
+                    document.getElementById('ramUsage').textContent = data.ram_usage || '--';
+                    document.getElementById('diskFree').textContent = data.disk_free || '--';
+                    document.getElementById('blockFiles').textContent = data.block_files || '--';
+                    
+                    // Update systemd services box
+                    const zebraStatus = data.zebra_status || '--';
+                    const lightwalletdStatus = data.lightwalletd_status || '--';
+                    const caddyStatus = data.caddy_status || '--';
+                    
+                    document.getElementById('zebraStatus').textContent = zebraStatus;
+                    document.getElementById('zebraStatus').className = zebraStatus === 'active' ? 'status-active' : 'status-inactive';
+                    document.getElementById('blockNum').textContent = data.current_height || '--';
+                    
+                    document.getElementById('lightwalletdStatus').textContent = lightwalletdStatus;
+                    document.getElementById('lightwalletdStatus').className = lightwalletdStatus === 'active' ? 'status-active' : 'status-inactive';
+                    
+                    document.getElementById('caddyStatus').textContent = caddyStatus;
+                    document.getElementById('caddyStatus').className = caddyStatus === 'active' ? 'status-active' : 'status-inactive';
+                    
+                    document.getElementById('netType').textContent = data.network_type || '--';
+                    document.getElementById('syncTimeout').textContent = data.sync_timeout || '--';
+                    document.getElementById('remainingSync').textContent = data.remaining_blocks || '--';
+                    
+                    // Update network access box
+                    document.getElementById('domain').textContent = data.subdomain || '--';
+                    document.getElementById('dnsIP').textContent = data.subdomain_ip || '--';
+                    document.getElementById('publicIP').textContent = data.current_external_ip || '--';
+                    
+                    // Check for IP mismatch alarm
+                    const networkAccessBox = document.getElementById('networkAccessBox');
+                    if (data.ip_mismatch_alarm === 1 || data.ip_mismatch_alarm === '1') {
+                        networkAccessBox.classList.add('ip-alarm');
+                    } else {
+                        networkAccessBox.classList.remove('ip-alarm');
+                    }
+                    
+                    // Update node health box
+                    const syncPercent = parseFloat(data.sync_percent) || 0;
+                    const syncStatus = syncPercent >= 99 ? 'Fully Synchronized' : `Syncing: ${syncPercent.toFixed(1)}%`;
+                    document.getElementById('syncStatus').textContent = syncStatus;
+                    document.getElementById('lastBlockTime').textContent = data.last_block || '--';
+                    
+                    // Update live logs
+                    if (data.recent_logs && Array.isArray(data.recent_logs)) {
+                        const logContainer = document.getElementById('logContainer');
+                        logContainer.innerHTML = '';
+                        data.recent_logs.slice(-50).forEach(log => {  // Limit to last 50 logs
+                            const logLine = document.createElement('div');
+                            logLine.className = 'logline';
+                            logLine.textContent = log;
+                            logContainer.appendChild(logLine);
+                        });
+                        // Auto-scroll to bottom
+                        logContainer.parentElement.scrollTop = logContainer.parentElement.scrollHeight;
+                    }
+                })
+                .catch(error => {
+                    // No JSON file found - initialize all fields to show no data
+                    initializeAllFields();
+                });
+        }
+
+        // Initialize all fields with "no data" state on page load
+        initializeAllFields();
+        
+        // Update metrics every 30 seconds
+        setInterval(fetchAndUpdateMetrics, 30000);
+        // Initial fetch on page load
+        fetchAndUpdateMetrics();
+
+        // Toggle logs collapse/expand
+        document.getElementById('logsToggleBtn').addEventListener('click', function() {
+            const logContainer = document.getElementById('logContainer');
+            const btn = this;
+            
+            logContainer.classList.toggle('collapsed');
+            
+            if (logContainer.classList.contains('collapsed')) {
+                btn.textContent = '▶ Recent Logs';
+            } else {
+                btn.textContent = '▼ Recent Logs';
+            }
+        });
+
+        // Update overlay text periodically
+        const messages = [
+            'Initializing Protocol...',
+            'Loading Zcash Parameters...',
+            'Syncing Blockchain Data...',
+            'Configuring Zebra Node...',
+            'Setting up Lightwalletd...',
+            'Deploying Caddy Proxy...',
+            'Finalizing Installation...'
+        ];
+        let msgIndex = 0;
+        setInterval(() => {
+            document.querySelector('#overlay p:first-of-type').textContent = messages[msgIndex % messages.length];
+            msgIndex++;
+        }, 3000);
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+    </script>
+</body>
+</html>
