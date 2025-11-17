@@ -1,15 +1,14 @@
 #!/usr/bin/env bash
+#!/usr/bin/env bash
 # zecnode-preflight.sh
-# Prerequisite checker: verifies system is TRULY ready before we start.
-# Checks: root, distro, network, disk space
-# NOTE: Development libraries, build tools, Caddy, and gcc will be installed 
-# automatically by later scripts (zecnode-toolchain-setup.sh).
-# Output: STOP only for true blockers (root, distro). WARN for others.
+# Preflight check: validates system readiness before Zcash node installation.
+# CHECKS: Rust, Go, Caddy, networking, disk space.
+# DOES NOT: Install packages (use toolchain script for that).
 #
-# Version: 1.3.14
+# VERSION="1.3.21"
 # Created by: CyberAxe (www.dontpanic.biz)
 #
-# Run:  sudo bash ./zecnode-preflight.sh
+# Run:  bash ./zecnode-preflight.sh
 
 set -euo pipefail
 
@@ -26,18 +25,7 @@ info "=== Zcash Node Installation Preflight Checklist ==="
 echo
 
 # ============================================================================
-# 1. Root access - BLOCKER
-# ============================================================================
-info "Checking: root access..."
-if [[ "${EUID:-$(id -u)}" -eq 0 ]]; then
-  ok "Running as root"
-else
-  fail "Not running as root. Use: sudo bash $0"
-  FAIL=$((FAIL + 1))
-fi
-
-# ============================================================================
-# 2. Distro (Ubuntu/Mint) - BLOCKER
+# 1. Distro (Ubuntu/Mint) - BLOCKER
 # ============================================================================
 info "Checking: distro..."
 if [[ -f /etc/os-release ]]; then
@@ -90,21 +78,19 @@ fi
 # ============================================================================
 # 5. No existing conflicting services - BLOCKER
 # ============================================================================
-info "Checking: no conflicting services..."
+info "Checking: no conflicting processes..."
 CONFLICTS=()
-for service in zebrad lightwalletd glances-web; do
-  if systemctl is-active "$service" >/dev/null 2>&1; then
-    CONFLICTS+=("$service (running)")
-  elif systemctl is-enabled "$service" >/dev/null 2>&1; then
-    CONFLICTS+=("$service (enabled)")
+for process in zebrad lightwalletd; do
+  if pgrep -x "$process" >/dev/null 2>&1; then
+    CONFLICTS+=("$process (running)")
   fi
 done
 
 if [[ ${#CONFLICTS[@]} -eq 0 ]]; then
-  ok "No conflicting services"
+  ok "No conflicting processes"
 else
-  fail "Found existing services: ${CONFLICTS[*]}"
-  fail "Run cleanup first: sudo bash zecnode-cleanup.sh"
+  fail "Found existing processes: ${CONFLICTS[*]}"
+  fail "Run cleanup first: bash zecnode-cleanup.sh"
   FAIL=$((FAIL + 1))
 fi
 
@@ -119,15 +105,15 @@ if [[ $FAIL -eq 0 ]]; then
   echo
   
   # Confirmation prompt
-  read -p "System ready for installation. Proceed to mount setup? (Y/n default=Y): " PREFLIGHT_OK
+  read -p "System ready for installation. Proceed to toolchain setup? (Y/n default=Y): " PREFLIGHT_OK
   PREFLIGHT_OK=${PREFLIGHT_OK:-Y}
   
   if [[ "$PREFLIGHT_OK" =~ ^[Yy]$ ]]; then
-    ok "Preflight confirmed. Starting mount setup..."
+    ok "Preflight confirmed. Starting toolchain setup..."
     echo
     # AUTO-CHAIN: Automatically run the next script
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    exec sudo bash "$SCRIPT_DIR/zecnode-mount-setup.sh"
+    exec bash "$SCRIPT_DIR/zecnode-toolchain-setup.sh"
   else
     warn "Installation cancelled by user."
     exit 1

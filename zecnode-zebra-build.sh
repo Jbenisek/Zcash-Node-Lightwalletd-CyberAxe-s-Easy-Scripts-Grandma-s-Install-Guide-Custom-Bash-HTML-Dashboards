@@ -2,10 +2,10 @@
 # zecnode-zebra-build.sh
 # Build and install Zebra (Zcash consensus node)
 #
-# VERSION="1.3.14"
+# VERSION="1.3.21"
 # Created by: CyberAxe (www.dontpanic.biz)
 #
-# Run on Mint:  sudo bash ./zecnode-zebra-build.sh
+# Run on Mint:  bash ./zecnode-zebra-build.sh
 
 set -euo pipefail
 
@@ -14,29 +14,27 @@ ok()    { echo -e "\e[32m[✓]\e[0m $*"; }
 warn()  { echo -e "\e[33m[!]\e[0m $*"; }
 err()   { echo -e "\e[31m[✗]\e[0m $*"; exit 1; }
 
-[[ "${EUID:-$(id -u)}" -eq 0 ]] || err "Run with sudo."
-
-# Setup environment paths
-export PATH="$PATH:/root/.cargo/bin:/usr/local/go/bin"
+# Setup environment paths for actual user
+USER_HOME="$HOME"
+export PATH="$PATH:$USER_HOME/.cargo/bin:/usr/local/go/bin"
 
 echo
 info "=== Zebra v2.5.0 Build & Configuration ==="
 echo
 
 # ============================================================================
-# 0. Source configuration from Script 3 (mount-setup.sh)
+# 0. Source configuration for service user
 # ============================================================================
-if [[ ! -f "/etc/zecnode/zecnode.conf" ]]; then
-  err "Configuration file not found. Please run zecnode-mount-setup.sh first."
+ZECNODE_CONFIG="$HOME/.config/zecnode/zecnode.conf"
+
+if [[ -f "$ZECNODE_CONFIG" ]]; then
+  source "$ZECNODE_CONFIG"
+  info "Using service user: ${SERVICE_USER:-$(whoami)}"
+else
+  # Fallback if config doesn't exist
+  SERVICE_USER="$(whoami)"
+  info "Service user: $SERVICE_USER"
 fi
-
-source /etc/zecnode/zecnode.conf
-
-if [[ -z "$ZECNODE_DATA_PATH" ]]; then
-  err "ZECNODE_DATA_PATH not set in configuration. Invalid config file."
-fi
-
-info "Using data storage path: $ZECNODE_DATA_PATH"
 echo
 
 # ============================================================================
@@ -55,14 +53,19 @@ echo
 # ============================================================================
 # 3. Clone Zebra v2.5.0 from official repo
 # ============================================================================
-ZEBRA_DIR="/opt/zecnode/zebra"
+# Use user home for build directory
+USER_HOME="$HOME"
+ZEBRA_DIR="$USER_HOME/.local/src/zebra"
+info "Build directory (user home): $ZEBRA_DIR"
+
 ZEBRA_REPO="https://github.com/ZcashFoundation/zebra.git"
 
 info "Cloning Zebra v2.5.0..."
 
 # Create build directory
-mkdir -p /opt/zecnode
-cd /opt/zecnode
+BUILD_BASE_DIR=$(dirname "$ZEBRA_DIR")
+mkdir -p "$BUILD_BASE_DIR"
+cd "$BUILD_BASE_DIR"
 
 # Clone if not exists, otherwise update
 if [[ ! -d "$ZEBRA_DIR" ]]; then
@@ -104,44 +107,37 @@ ok "Build complete: target/release/zebrad"
 echo
 
 # ============================================================================
-# 5. Install zebrad binary
+# 5. Install zebrad binary to ~/.cargo/bin
 # ============================================================================
-info "Installing zebrad binary..."
+info "Installing zebrad binary to ~/.cargo/bin..."
 
-# Copy to standard location
-cp target/release/zebrad /usr/local/bin/zebrad
+# Install from the zebrad package directory (Zebra uses workspace structure)
+cd "$ZEBRA_DIR"
+cargo install --locked --path zebrad
 
-if [[ ! -x "/usr/local/bin/zebrad" ]]; then
-  err "zebrad not executable after install"
+if [[ ! -x "$HOME/.cargo/bin/zebrad" ]]; then
+  err "zebrad not found in ~/.cargo/bin after install"
 fi
 
-ZEBRA_VERSION=$(/usr/local/bin/zebrad --version 2>&1 | head -1)
+ZEBRA_VERSION=$("$HOME/.cargo/bin/zebrad" --version 2>&1 | head -1)
 ok "Installed: $ZEBRA_VERSION"
 echo
 
 # ============================================================================
-# 6. Configure Zebra (FIXED: Use standard config location)
+# 6. Configure Zebra in user home (NOT /etc/)
 # ============================================================================
 info "Configuring Zebra..."
 
-# Get the service user for config location
-if [[ -n "$SUDO_USER" ]]; then
-  SERVICE_USER="$SUDO_USER"
-else
-  SERVICE_USER="$(whoami)"
-fi
-
-# Use Zebra's standard config location (not custom /etc/zebra/)
-ZEBRA_CONFIG_DIR="/home/$SERVICE_USER/.config"
+# Use Zebra's standard config location in user home
+ZEBRA_CONFIG_DIR="$HOME/.config"
 ZEBRA_CONFIG_FILE="$ZEBRA_CONFIG_DIR/zebrad.toml"
 
 # Create config directory if it doesn't exist
 mkdir -p "$ZEBRA_CONFIG_DIR"
-mkdir -p "$ZECNODE_DATA_PATH/zebra"
 
 # Generate default config in standard location
 if [[ ! -f "$ZEBRA_CONFIG_FILE" ]]; then
-  if ! /usr/local/bin/zebrad generate -o "$ZEBRA_CONFIG_FILE"; then
+  if ! "$HOME/.cargo/bin/zebrad" generate -o "$ZEBRA_CONFIG_FILE"; then
     err "Failed to generate zebrad config file at $ZEBRA_CONFIG_FILE"
   fi
 fi
@@ -151,17 +147,8 @@ if [[ ! -f "$ZEBRA_CONFIG_FILE" ]]; then
   err "Failed to generate zebrad.toml in $ZEBRA_CONFIG_FILE"
 fi
 
-# CRITICAL FIX: Only modify [state].cache_dir, not global cache_dir replacement
-info "Setting blockchain data directory..."
-# Replace only the state cache_dir line
-sed -i "/^\[state\]/,/^\[/{s|cache_dir = .*|cache_dir = \"$ZECNODE_DATA_PATH/zebra\"|;}" "$ZEBRA_CONFIG_FILE"
-
-# Verify the state cache_dir was set correctly
-if ! grep -A 5 '^\[state\]' "$ZEBRA_CONFIG_FILE" | grep -q "cache_dir = \"$ZECNODE_DATA_PATH/zebra\""; then
-  err "Failed to set state cache_dir to $ZECNODE_DATA_PATH/zebra"
-fi
-
-ok "Blockchain data directory: $ZECNODE_DATA_PATH/zebra"
+# Use authority default cache directory (no custom path override)
+info "Using authority default cache directory: ~/.cache/zebrad/"
 
 # Enable RPC for lightwalletd connection
 info "Configuring RPC listener..."
@@ -171,89 +158,82 @@ if ! grep -q 'listen_addr = "127.0.0.1:8232"' "$ZEBRA_CONFIG_FILE"; then
   sed -i '/^\[rpc\]/a listen_addr = "127.0.0.1:8232"' "$ZEBRA_CONFIG_FILE"
 fi
 
+# Change indexer to different port to avoid conflict with main RPC
+sed -i 's/^indexer_listen_addr = "127.0.0.1:8232"/indexer_listen_addr = "127.0.0.1:8233"/' "$ZEBRA_CONFIG_FILE"
+
 # Verify RPC was enabled
 if ! grep -q 'listen_addr = "127.0.0.1:8232"' "$ZEBRA_CONFIG_FILE"; then
   err "Failed to enable RPC in zebrad.toml"
 fi
 
 ok "RPC enabled: 127.0.0.1:8232"
-
-# Set permissions and ownership
-chmod 644 "$ZEBRA_CONFIG_FILE"
-chown "$SERVICE_USER:$SERVICE_USER" "$ZEBRA_CONFIG_FILE"
-chown -R "$SERVICE_USER:$SERVICE_USER" "$ZECNODE_DATA_PATH/zebra"
-
-ok "Configuration created: $ZEBRA_CONFIG_FILE (owned by $SERVICE_USER)"
+ok "Indexer RPC moved to port 8233 (separate from main RPC)"
+ok "Configuration created: $ZEBRA_CONFIG_FILE"
 echo
 
 # ============================================================================
-# 7. Verify installation
+# 6b. Open port 8233 for Zcash peer network (CRITICAL for blockchain sync)
 # ============================================================================
+info "Configuring firewall for Zcash peer network..."
+
+# Open port 8233 for peer-to-peer connections (required by authority)
+if command -v ufw &>/dev/null; then
+  if sudo ufw status | grep -q "8233"; then
+    ok "Port 8233 already allowed in UFW"
+  else
+    info "Opening port 8233/tcp for Zcash peer connections..."
+    if sudo ufw allow 8233/tcp >/dev/null 2>&1; then
+      ok "UFW rule added: allow 8233/tcp"
+      # Verify the port was actually added
+      sleep 1
+      if sudo ufw status | grep -q "8233"; then
+        ok "✓ VERIFIED: Port 8233 is now in UFW rules"
+      else
+        err "Port 8233 was NOT added to UFW rules - blockchain sync will FAIL"
+      fi
+    else
+      err "ufw allow 8233/tcp failed - cannot proceed (blockchain sync requires peer connections)"
+    fi
+  fi
+else
+  warn "UFW not available - ensure port 8233 is open for Zcash peer network"
+fi
+
+ok "Port 8233 (peer network) configured for blockchain sync"
+echo
 
 # ============================================================================
 # 7. Verify installation
 # ============================================================================
 info "Verifying installation..."
 
-/usr/local/bin/zebrad --version
+"$HOME/.cargo/bin/zebrad" --version
 echo
 
 # ============================================================================
-# 8. Start Zebra Service
+# 8. Start Zebra (Direct Execution - No Systemd)
 # ============================================================================
-info "Starting Zebra service..."
+info "Starting Zebra..."
 
-# Create systemd service file
-info "Creating zebrad systemd service..."
+# Per official docs: https://zebra.zfnd.org/user/run.html
+# Just run: zebrad start
 
-# Determine the correct user (the one who invoked sudo, not root)
-if [[ -n "$SUDO_USER" ]]; then
-  SERVICE_USER="$SUDO_USER"
-else
-  SERVICE_USER="$(whoami)"
-fi
+# Start zebrad in background
+nohup "$HOME/.cargo/bin/zebrad" start > "$HOME/.cache/zebrad.log" 2>&1 &
+ZEBRA_PID=$!
 
-info "Service will run as user: $SERVICE_USER"
+ok "Zebra started (PID: $ZEBRA_PID)"
+info "Logs: tail -f ~/.cache/zebrad.log"
 
-cat > /etc/systemd/system/zebrad.service << EOF
-[Unit]
-Description=Zebra
-After=network.target
-
-[Service]
-User=$SERVICE_USER
-Group=$SERVICE_USER
-ExecStart=/usr/local/bin/zebrad
-Restart=always
-RestartSec=10
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-# Set correct permissions
-chmod 644 /etc/systemd/system/zebrad.service
-
-ok "Systemd service file created: /etc/systemd/system/zebrad.service"
-
-# Enable and start zebrad service
-sudo systemctl daemon-reload
-sudo systemctl enable zebrad
-sudo systemctl start zebrad
-
-# Wait a moment for service to start
+# Wait for startup
 sleep 3
 
-# Check service status
-if sudo systemctl is-active --quiet zebrad; then
-  ok "Zebra service started successfully"
+# Check if process is running
+if ps -p $ZEBRA_PID > /dev/null 2>&1; then
+  ok "Zebra is running"
 else
-  warn "Zebra service may still be starting... (this is normal)"
+  err "Zebra failed to start. Check logs: tail ~/.cache/zebrad.log"
 fi
-
-# Show service status
-info "Service status:"
-sudo systemctl status zebrad --no-pager -l | head -10
 echo
 
 # ============================================================================
@@ -264,16 +244,15 @@ info "🔍 VERIFYING ZEBRA CONFIGURATION"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # Check config file exists and has correct settings
-CONFIG_FILE="/home/$SERVICE_USER/.config/zebrad.toml"
+CONFIG_FILE="$HOME/.config/zebrad.toml"
 if [[ -f "$CONFIG_FILE" ]]; then
   ok "Config file exists: $CONFIG_FILE"
   
-  # Verify cache_dir is set correctly
-  if grep -q "cache_dir.*$ZECNODE_DATA_PATH/zebra" "$CONFIG_FILE"; then
-    ok "✓ Config has correct cache_dir: $ZECNODE_DATA_PATH/zebra"
+  # Verify RPC is enabled
+  if grep -q 'listen_addr = "127.0.0.1:8232"' "$CONFIG_FILE"; then
+    ok "✓ Config has RPC enabled: 127.0.0.1:8232"
   else
-    err "✗ Config cache_dir is NOT set correctly!"
-    grep "cache_dir" "$CONFIG_FILE" || warn "No cache_dir found in config"
+    warn "! RPC may not be enabled in config"
   fi
 else
   err "✗ Config file not found at $CONFIG_FILE"
@@ -283,44 +262,35 @@ fi
 info "Checking Zebra startup logs..."
 sleep 5
 
-# Check if Zebra service is actually running and responding
-if systemctl is-active --quiet zebrad; then
-  ok "✓ Zebra service is active and running"
+# Check if Zebra process is actually running
+if ps aux | grep -q "[z]ebrad start"; then
+  ok "✓ Zebra is running"
   
-  # Check if Zebra loaded the config (give it more time during startup)
-  if sudo journalctl -u zebrad --no-pager -n 50 | grep -q "loaded config\|Using config file"; then
+  # Check if Zebra loaded the config
+  if grep -q "loaded config\|Using config file" "$HOME/.cache/zebrad.log" 2>/dev/null; then
     ok "✓ Zebra successfully loaded configuration"
   else
-    # During initial startup, config loading might not be logged yet - check if service is healthy instead
-    if sudo journalctl -u zebrad --no-pager -n 10 | grep -q "initialized\|started\|running"; then
-      info "✓ Zebra service initialized (config loading may be in progress)"
-    else
-      warn "! Zebra config loading not confirmed in recent logs"
-    fi
+    info "✓ Zebra started (config loading may be in progress)"
   fi
 
-  # Check if Zebra is using the correct data directory (give it more time)
-  if sudo journalctl -u zebrad --no-pager -n 50 | grep -q "$ZECNODE_DATA_PATH/zebra"; then
-    ok "✓ Zebra is using correct data directory: $ZECNODE_DATA_PATH/zebra"
-  else
-    # During initial startup, data directory usage might not be logged yet
-    info "✓ Data directory configured (usage logging may be in progress)"
-  fi
+  # Check if Zebra is using the correct data directory (authority default: ~/.cache/zebrad/)
+  info "✓ Using authority default data directory: ~/.cache/zebrad/"
 else
-  err "✗ Zebra service is not running!"
+  err "✗ Zebra is not running!"
 fi
 
-# Show current data directory status
-if [[ -d "$ZECNODE_DATA_PATH/zebra" ]]; then
-  DATA_SIZE=$(du -sh "$ZECNODE_DATA_PATH/zebra" 2>/dev/null | cut -f1)
-  ok "✓ Data directory exists: $ZECNODE_DATA_PATH/zebra (${DATA_SIZE:-empty})"
+# Show current data directory status (authority default location)
+ZEBRA_DATA_DIR="$HOME/.cache/zebrad"
+if [[ -d "$ZEBRA_DATA_DIR" ]]; then
+  DATA_SIZE=$(du -sh "$ZEBRA_DATA_DIR" 2>/dev/null | cut -f1)
+  ok "✓ Data directory exists: $ZEBRA_DATA_DIR (${DATA_SIZE:-empty})"
 else
-  info "Data directory will be created when sync begins"
+  info "Data directory will be created when sync begins: $ZEBRA_DATA_DIR"
 fi
 
 echo
 warn "⚠️  IMPORTANT: If any checks above failed, STOP NOW and fix before proceeding!"
-warn "   Run: sudo systemctl stop zebrad"
+warn "   Run: pkill zebrad"
 warn "   Then re-run this script after fixing the issue."
 echo
 
@@ -335,16 +305,16 @@ if [[ "$CONTINUE_OK" =~ ^[Yy]$ ]]; then
   echo
   # AUTO-CHAIN: Automatically run the next script
   SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  exec sudo bash "$SCRIPT_DIR/zecnode-lightwalletd-build.sh"
+  exec bash "$SCRIPT_DIR/zecnode-lightwalletd-build.sh"
 else
   ok "Installation paused. Zebra is running in background."
   echo
   info "To resume later:"
-  info "  sudo bash ./zecnode-lightwalletd-build.sh"
+  info "  bash ./zecnode-lightwalletd-build.sh"
   echo
   info "To check Zebra status:"
-  info "  sudo systemctl status zebrad"
-  info "  sudo journalctl -u zebrad -f"
+  info "  ps aux | grep zebrad"
+  info "  tail -f ~/.cache/zebrad.log"
   echo
   exit 0
 fi
@@ -359,8 +329,8 @@ echo
 info "📊 SYNC STATUS:"
 info "  • Initial sync will take 3-7 days"
 info "  • RPC will be available at 127.0.0.1:8232 once synced"
-info "  • Monitor progress: sudo journalctl -u zebrad -f"
-info "  • Data location: $ZECNODE_DATA_PATH/zebra"
+info "  • Monitor progress: tail -f ~/.cache/zebrad.log"
+info "  • Data location: ~/.cache/zebrad/ (authority default)"
 echo
 info "🔗 NEXT STEPS:"
 info "  • If verification passed: Continue with lightwalletd installation"

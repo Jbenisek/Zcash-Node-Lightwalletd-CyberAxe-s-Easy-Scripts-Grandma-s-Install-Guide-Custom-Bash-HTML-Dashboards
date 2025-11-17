@@ -1,9 +1,9 @@
 # 🎯 Grandma's Guide to Zcash Node Installation
 ## Simple, Step-by-Step Instructions for Everyone
 
-**System Version**: 1.2.26  
+**System Version**: 1.3.17  
 **Created by:** CyberAxe (www.dontpanic.biz)  
-**Last Updated:** October 27, 2025
+**Last Updated:** November 9, 2025
 
 ---
 
@@ -58,8 +58,8 @@ Or tag me in the Zcash Froums. @jbenisek
 - ✓ Go programming language gets installed
 - ✓ Zcash Zebra node gets built and configured
 - ✓ lightwalletd server gets built and configured
-- ✓ Caddy reverse proxy with HTTPS gets configured
-- ✓ Services start automatically
+- ✓ SSL certificates obtained via Let's Encrypt (using certbot)
+- ✓ Services start automatically as your user (not systemd)
 - ✓ Everything is set up to auto-start when your computer reboots
 
 ---
@@ -190,20 +190,20 @@ Do you want to set a static IP? (recommended for port forwarding) (y/N):
 
 ---
 
-#### Part 5: Caddy Setup (3-5 minutes)
-**Overview:** "Now we're setting up the secure front door for your Zcash node, grandma. This creates HTTPS security so your node can be accessed safely."
+#### Part 5: Certificate Setup (3-5 minutes)
+**Overview:** "Now we're getting your SSL certificate from Let's Encrypt for secure access to your node."
 
 ```
-[*] === Caddy v2.6.x TLS & Reverse Proxy Setup ===
-Enter your domain name (e.g., lightwalletd.example.com): 
+[*] === Let's Encrypt Certificate Setup (certbot) ===
+Enter your domain name (e.g., zcash.example.com): 
 ```
-**What's happening:** Setting up secure HTTPS access.
+**What's happening:** Getting your free SSL certificate for secure HTTPS access.
 
 **What you do:**
 1. If you have a domain name, type it and press Enter
 2. Then type your email address and press Enter
 3. If you don't have a domain, just press Enter twice (skip both questions)
-4. Press **Y** when asked to continue
+4. Follow any additional prompts for certificate configuration
 
 ---
 
@@ -341,10 +341,19 @@ sudo bash ./zecnode-cleanup.sh
 ### What the Monitor Dashboard Shows
 
 ```
-╔═══ SERVICE STATUS ═══╗
-║ Status: ✓ RUNNING
-║ Block Height: 1234567
-╚═══════════════════════╝
+╔═══ SERVICE STATUS ════════════════════════════╗
+║ Zebra Node:      active     Block: 2345678
+║ Lightwalletd:    active
+║ Network Type:    Main
+║ Sync Timeout:    30s
+║ Remaining Sync:  1 blocks
+╚══════════════════════════════════════════════╝
+
+╔═══ NETWORK ACCESS ═════════════════════╗
+║ Domain: zcash.example.com
+║ DNS IP: 203.0.113.45
+║ Public IP: 203.0.113.45
+╚═══════════════════════════════════════╝
 
 ╔═══ BLOCKCHAIN SYNC ═══╗
 ║ Progress: [████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 45%
@@ -352,22 +361,29 @@ sudo bash ./zecnode-cleanup.sh
 ╚═══════════════════════╝
 
 ╔═══ NETWORK ═══════════════╗
-║ Peers Connected: 8
+║ Known Peers: 16
+║ Connections/hr: 5
+║ Changes/hr (avg): 12
 ║ CPU Usage: 42.3%
-║ RAM Usage: 1024MB
-║ Disk Used: 125G
-╚═════════════════════════════╝
+║ RAM Usage: 680MB
+║ Disk Free: 601G
+║ Block Files: 16533
+╚═══════════════════════════╝
 ```
 
 **What each line means:**
-- **Status:** ✓ RUNNING = everything is working
-- **Block Height:** The current progress (goes up over time)
+- **Zebra Node:** Shows if the blockchain node is running
+- **Lightwalletd:** Shows if the wallet server is running
+- **Block:** Current block height (goes up as blockchain syncs)
+- **Domain/DNS IP:** Your internet address for accessing the node
+- **Public IP:** Your real internet IP address
 - **Progress Bar:** Visual representation (fills up to 100%)
-- **Sync %:** Exact percentage done
-- **Time Remaining:** Rough estimate of hours left
-- **Peers:** Other computers helping you (4+ is good)
+- **Sync %:** Exact percentage done (100% when fully synced)
+- **Time Remaining:** Rough estimate of hours left until 99%+ sync
+- **Peers:** Other computers helping you download (4+ is good)
 - **CPU/RAM:** System resources (your computer is working)
-- **Disk Used:** How much space the blockchain is taking
+- **Disk Free:** How much space you have left
+- **Block Files:** Number of blockchain data files
 
 ### When Sync Is Complete (100%)
 
@@ -390,27 +406,28 @@ You don't need to do anything. It starts automatically and continues syncing fro
 
 ### To Manually Restart the Node
 
-If you need to restart it for any reason:
+If you need to restart it for any reason, kill the processes and run the monitor:
 
 **Restart just the Zcash node:**
 ```bash
-sudo systemctl restart zebrad
+pkill zebrad
+sudo bash ~/zebra-monitor.sh
 ```
 
-**Option 2: Restart the wallet server**
+**Restart just lightwalletd:**
 ```bash
-sudo systemctl restart lightwalletd
+pkill lightwalletd
+sudo bash ~/zebra-monitor.sh
 ```
 
-**Option 3: Restart the web server**
+**Restart everything:**
 ```bash
-sudo systemctl restart caddy
+pkill zebrad
+pkill lightwalletd
+sudo bash ~/zebra-monitor.sh
 ```
 
-**Option 4: Restart all three**
-```bash
-sudo systemctl restart zebrad lightwalletd caddy
-```
+The monitor will auto-start any stopped services.
 
 ---
 
@@ -420,38 +437,37 @@ sudo systemctl restart zebrad lightwalletd caddy
 
 **Stop just Zebra:**
 ```bash
-sudo systemctl stop zebrad
+pkill zebrad
 ```
 
 **Stop just lightwalletd:**
 ```bash
-sudo systemctl stop lightwalletd
-```
-
-**Stop Caddy (web server):**
-```bash
-sudo systemctl stop caddy
+pkill lightwalletd
 ```
 
 **Stop everything:**
 ```bash
-sudo systemctl stop zebrad lightwalletd caddy
+pkill zebrad
+pkill lightwalletd
 ```
 
-### To Stop It From Auto-Starting on Reboot
+### To Stop Auto-Starting on Reboot
 
+Remove the monitor from your startup. If you added it to crontab:
 ```bash
-sudo systemctl disable zebrad
-sudo systemctl disable lightwalletd
-sudo systemctl disable caddy
+crontab -e
 ```
+Find the line with `zebra-monitor.sh` and delete it.
 
-### To Re-Enable Auto-Start
+### To Re-Enable Auto-Start on Reboot
 
+Add this to your crontab:
 ```bash
-sudo systemctl enable zebrad
-sudo systemctl enable lightwalletd
-sudo systemctl enable caddy
+crontab -e
+```
+Add this line:
+```
+@reboot sudo bash /full/path/to/zebra-monitor.sh
 ```
 
 ---
@@ -488,26 +504,25 @@ Press **Ctrl + C** to stop watching.
 
 ### View Detailed Logs
 
-**See Zebra node logs:**
+**See Zebra node logs (last 50 lines):**
 ```bash
-sudo journalctl -u zebrad -n 50
+tail -n 50 ~/.cache/zebrad.log
 ```
-This shows the last 50 lines of activity.
 
 **Follow Zebra logs live:**
 ```bash
-sudo journalctl -u zebrad -f
+tail -f ~/.cache/zebrad.log
 ```
-This shows new messages as they happen. Press **Ctrl + C** to stop.![alt text](image.png)
+This shows new messages as they happen. Press **Ctrl + C** to stop.
 
 **See lightwalletd logs:**
 ```bash
-sudo journalctl -u lightwalletd -n 51
+tail -n 50 ~/.cache/lightwalletd.log
 ```
 
-**See Caddy logs:**
+**Follow lightwalletd logs live:**
 ```bash
-sudo journalctl -u caddy -n 50
+tail -f ~/.cache/lightwalletd.log
 ```
 
 ### Check Disk Usage

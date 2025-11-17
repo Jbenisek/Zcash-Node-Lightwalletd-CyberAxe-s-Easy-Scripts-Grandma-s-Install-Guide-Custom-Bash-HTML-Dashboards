@@ -373,7 +373,6 @@
         <div class="header">SYSTEMD SERVICES</div>
         <div class="row">Zebra Node: <span class="status-active" id="zebraStatus">active</span>     Block: <span class="value" id="blockNum">--</span></div>
         <div class="row">Lightwalletd: <span class="status-active" id="lightwalletdStatus">active</span></div>
-        <div class="row">Caddy (TLS): <span class="status-active" id="caddyStatus">active</span></div>
         <div class="row">Network Type: <span class="value" id="netType">--</span></div>
         <div class="row">Sync Timeout: <span class="value" id="syncTimeout">--</span></div>
         <div class="row">Remaining Sync: <span class="value" id="remainingSync">--</span> blocks</div>
@@ -979,9 +978,6 @@
             document.getElementById('lightwalletdStatus').textContent = 'unknown';
             document.getElementById('lightwalletdStatus').className = 'status-inactive';
             
-            document.getElementById('caddyStatus').textContent = 'unknown';
-            document.getElementById('caddyStatus').className = 'status-inactive';
-            
             document.getElementById('netType').textContent = '--';
             document.getElementById('syncTimeout').textContent = '--';
             document.getElementById('remainingSync').textContent = '--';
@@ -1029,7 +1025,6 @@
                     // Update systemd services box
                     const zebraStatus = data.zebra_status || '--';
                     const lightwalletdStatus = data.lightwalletd_status || '--';
-                    const caddyStatus = data.caddy_status || '--';
                     
                     document.getElementById('zebraStatus').textContent = zebraStatus;
                     document.getElementById('zebraStatus').className = zebraStatus === 'active' ? 'status-active' : 'status-inactive';
@@ -1037,9 +1032,6 @@
                     
                     document.getElementById('lightwalletdStatus').textContent = lightwalletdStatus;
                     document.getElementById('lightwalletdStatus').className = lightwalletdStatus === 'active' ? 'status-active' : 'status-inactive';
-                    
-                    document.getElementById('caddyStatus').textContent = caddyStatus;
-                    document.getElementById('caddyStatus').className = caddyStatus === 'active' ? 'status-active' : 'status-inactive';
                     
                     document.getElementById('netType').textContent = data.network_type || '--';
                     document.getElementById('syncTimeout').textContent = data.sync_timeout || '--';
@@ -1052,7 +1044,7 @@
                     
                     // Check for IP mismatch alarm
                     const networkAccessBox = document.getElementById('networkAccessBox');
-                    if (data.ip_mismatch_alarm === 1 || data.ip_mismatch_alarm === '1') {
+                    if (data.subdomain_ip && data.current_external_ip && data.subdomain_ip !== data.current_external_ip) {
                         networkAccessBox.classList.add('ip-alarm');
                     } else {
                         networkAccessBox.classList.remove('ip-alarm');
@@ -1113,7 +1105,6 @@
             'Syncing Blockchain Data...',
             'Configuring Zebra Node...',
             'Setting up Lightwalletd...',
-            'Deploying Caddy Proxy...',
             'Finalizing Installation...'
         ];
         let msgIndex = 0;

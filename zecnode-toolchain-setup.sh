@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # zecnode-toolchain-setup.sh
-# Install Rust (rustup/cargo) and Go
+# Installs and configures Rust, Go, and Caddy for Zcash node infrastructure.
+# AUTO-CHAINS to zecnode-caddy-setup.sh on success.
 #
-# VERSION="1.3.14"
+# VERSION="1.3.21"
 # Created by: CyberAxe (www.dontpanic.biz)
 #
-# Run on Mint:  sudo bash ./zecnode-toolchain-setup.sh
+# Run:  bash ./zecnode-toolchain-setup.sh
 
 set -euo pipefail
 
@@ -13,8 +14,6 @@ info()  { echo -e "\e[36m[*]\e[0m $*"; }
 ok()    { echo -e "\e[32m[✓]\e[0m $*"; }
 warn()  { echo -e "\e[33m[!]\e[0m $*"; }
 err()   { echo -e "\e[31m[✗]\e[0m $*"; exit 1; }
-
-[[ "${EUID:-$(id -u)}" -eq 0 ]] || err "Run with sudo."
 
 echo
 info "=== Rust & Go Toolchain Setup ==="
@@ -25,11 +24,11 @@ echo
 # ============================================================================
 info "Installing build dependencies (gcc, make, etc.)..."
 
-if ! apt-get update &>/dev/null; then
+if ! sudo apt-get update &>/dev/null; then
   err "Failed to update apt cache"
 fi
 
-if ! apt-get install -y build-essential pkg-config libclang-dev llvm-dev libssl-dev zlib1g-dev protobuf-compiler ufw git &>/dev/null; then
+if ! sudo apt-get install -y build-essential pkg-config libclang-dev llvm-dev libssl-dev zlib1g-dev protobuf-compiler ufw git &>/dev/null; then
   err "Failed to install build dependencies"
 fi
 
@@ -127,12 +126,12 @@ else
     
     # Backup existing netplan
     if [[ -f /etc/netplan/01-netcfg.yaml ]]; then
-      cp /etc/netplan/01-netcfg.yaml /etc/netplan/01-netcfg.yaml.backup
+      sudo cp /etc/netplan/01-netcfg.yaml /etc/netplan/01-netcfg.yaml.backup
       info "Backed up existing netplan config"
     fi
     
     # Create new netplan config
-    cat > /etc/netplan/01-netcfg.yaml <<EOF
+    sudo bash -c "cat > /etc/netplan/01-netcfg.yaml" <<EOF
 network:
   version: 2
   ethernets:
@@ -148,7 +147,7 @@ network:
 EOF
     
     # Apply netplan
-    if netplan apply 2>/dev/null; then
+    if sudo netplan apply 2>/dev/null; then
       ok "Static IP configured: $STATIC_IP"
       info "Reconnect your SSH session to the new IP if needed."
       sleep 5
@@ -156,8 +155,8 @@ EOF
       warn "Netplan apply failed. Check configuration."
       # Restore backup
       if [[ -f /etc/netplan/01-netcfg.yaml.backup ]]; then
-        mv /etc/netplan/01-netcfg.yaml.backup /etc/netplan/01-netcfg.yaml
-        netplan apply 2>/dev/null || true
+        sudo mv /etc/netplan/01-netcfg.yaml.backup /etc/netplan/01-netcfg.yaml
+        sudo netplan apply 2>/dev/null || true
       fi
     fi
   else
@@ -169,16 +168,23 @@ fi
 # ============================================================================
 # 1. Install Rust (via rustup)
 # ============================================================================
+# 1. Install Rust (via rustup)
+# ============================================================================
 info "Installing Rust toolchain..."
+
+# Always install as current user (script runs as user, not root)
+ACTUAL_USER="$(whoami)"
+USER_HOME="$HOME"
+info "Installing Rust for current user: $ACTUAL_USER"
 
 # Download official rustup installer from verified source
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > /tmp/rustup-init.sh 2>/dev/null || err "Failed to download rustup"
 
-# Install with default settings (stable channel, ~/.cargo/bin added to PATH)
+# Install as current user
 bash /tmp/rustup-init.sh -y --default-toolchain stable 2>&1 | grep -E "(Installed|latest)" || true
 
 # Source cargo environment
-export PATH="$PATH:/root/.cargo/bin"
+source "$HOME/.cargo/env" 2>/dev/null || true
 
 # Verify installation
 if ! command -v cargo &>/dev/null; then
@@ -186,7 +192,11 @@ if ! command -v cargo &>/dev/null; then
 fi
 
 CARGO_VERSION=$(cargo --version 2>/dev/null)
-ok "Rust installed: $CARGO_VERSION"
+ok "Rust installed for $ACTUAL_USER: $CARGO_VERSION"
+ok "Rust binaries located at: $USER_HOME/.cargo/bin"
+
+# Add to PATH for this session
+export PATH="$PATH:$USER_HOME/.cargo/bin"
 echo
 
 # ============================================================================
@@ -218,9 +228,9 @@ if [[ ! -f "$GO_FILE" ]]; then
   err "Go download file not created: $GO_FILE"
 fi
 
-# Extract to /usr/local
-rm -rf /usr/local/go
-tar -C /usr/local -xzf "$GO_FILE" || err "Failed to extract Go"
+# Extract to /usr/local (requires sudo)
+sudo rm -rf /usr/local/go
+sudo tar -C /usr/local -xzf "$GO_FILE" || err "Failed to extract Go"
 rm -f "$GO_FILE"
 
 # Add to PATH
@@ -250,21 +260,6 @@ go version
 echo
 
 # ============================================================================
-# 4. Update environment for all future shells
-# ============================================================================
-info "Updating system environment..."
-
-# Add to /etc/profile.d for all users
-cat > /etc/profile.d/zecnode-toolchain.sh <<'EOF'
-# Zecnode toolchain environment
-export PATH="$PATH:/root/.cargo/bin:/usr/local/go/bin"
-EOF
-
-chmod 644 /etc/profile.d/zecnode-toolchain.sh
-ok "Environment updated: /etc/profile.d/zecnode-toolchain.sh"
-echo
-
-# ============================================================================
 # Done
 # ============================================================================
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -288,7 +283,7 @@ if [[ "$TOOLCHAIN_OK" =~ ^[Yy]$ ]]; then
   echo
   # AUTO-CHAIN: Automatically run the next script
   SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  exec sudo bash "$SCRIPT_DIR/zecnode-caddy-setup.sh"
+  exec bash "$SCRIPT_DIR/zecnode-caddy-setup.sh"
 else
   err "Toolchain issue reported. Check output above and try again."
   echo

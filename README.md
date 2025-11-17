@@ -10,7 +10,7 @@
 
 The system consists of 7 sequential bash scripts that handle everything from preflight checks to full deployment, with optional donation address configuration and real-time monitoring dashboards.
 
-**Status:** Production Ready (v1.3.14) - Thoroughly tested and battle-hardened
+**Status:** Production Ready (v1.3.21) - Thoroughly tested and battle-hardened
 
 ---
 
@@ -94,11 +94,12 @@ sudo bash zebra-monitor.sh
 ```
 
 Features:
-- Real-time sync progress
-- Service health status
-- Network connectivity metrics
-- Live log streaming
-- Beautiful ASCII dashboard
+- Real-time sync progress with accurate 99%+ detection
+- Service health status (Zebra, Lightwalletd)
+- Network connectivity metrics (peers, connections, changes/hr)
+- Domain and DNS IP monitoring with mismatch alarm
+- Live log streaming with timestamps
+- Beautiful ASCII dashboard with color coding
 - HTML visual monitor (press 'M' to open)
 - http://192.168.1.230:4242/Zcash%20Node%20Dashboard.html (Where 192.168.1.230 is your node LAN static IP, you can also setup for public access by port forwarding 4242 to this static IP in your router, then using your domain http://zcash.dontpanic.biz:4242/Zcash%20Node%20Dashboard.html, where zcash.dontpanic.biz is your domain)
 
@@ -136,43 +137,49 @@ This generates a detailed report including:
 
 ## 📋 Service Management
 
-After installation, manage services with systemd:
+Services run directly via nohup (not systemd):
 
 ```bash
-# Check service status
-sudo systemctl status zebrad
-sudo systemctl status lightwalletd
-sudo systemctl status caddy
+# Check if services are running
+pgrep zebrad    # Zebra node process
+pgrep lightwalletd  # Wallet server process
 
 # View logs
-sudo journalctl -u zebrad -f
-sudo journalctl -u lightwalletd -f
-sudo journalctl -u caddy -f
+tail -f ~/.cache/zebrad.log
+tail -f ~/.cache/lightwalletd.log
 
-# Restart services
-sudo systemctl restart zebrad
-sudo systemctl restart lightwalletd
-sudo systemctl restart caddy
+# Restart services (kill and re-run monitor)
+pkill zebrad
+pkill lightwalletd
+sudo bash zebra-monitor.sh  # Will auto-restart services
+
+# Stop services
+pkill zebrad
+pkill lightwalletd
 ```
+
+**Note:** Services run as the actual user (not root) and persist via nohup. Logs are in `~/.cache/`
 
 ---
 
 ## 🔐 Security Notes
 
-- **RPC Password**: Automatically generated and stored securely in `/etc/lightwalletd/zcash.conf`
-- **TLS Certificates**: Managed by Caddy with automatic renewal
-- **UFW Firewall**: Automatically configured for required ports
-- **File Permissions**: Restrictive (600) on sensitive configuration files
-- **Static IP**: Recommended for stable port forwarding
-- **Web Hosts** LAN Webserver on Port 4242 for Monitoring HTML, make accessable to work by portforwarding 4242 to static IP
-- http://192.168.1.230:4242/Zcash%20Node%20Dashboard.html
+- **RPC Configuration**: Stored securely in `~/.config/zcash.conf`
+- **TLS Certificates**: Managed by certbot with automatic renewal (official method)
+- **UFW Firewall**: Automatically configured for required ports (grpc, http, dns)
+- **File Permissions**: Restrictive on sensitive configuration files
+- **Static IP**: Recommended for stable port forwarding (default: 192.168.1.230)
+- **Web Monitor**: LAN Webserver on Port 4242 for HTML monitoring dashboard
+  - Local access: http://192.168.1.230:4242/Zcash%20Node%20Dashboard.html
+  - Remote access: Port forward 4242 in router + use your domain
+- **Caddy**: NOT used (we use certbot directly for Let's Encrypt certificates)
 
 ---
 
 ## 📚 Documentation
 
 - `GRANDMA_GUIDE.md` - Step-by-step instructions for non-technical users
-- `CHANGELOG_v1.3.0.md` - Version history and feature releases
+- `CHANGELOG_v1.5.0.md` - Version history and feature releases (v1.3.17 - latest)
 
 ---
 
@@ -181,11 +188,17 @@ sudo systemctl restart caddy
 **Q: Installation hangs or fails?**
 - A: Run `sudo bash zecnode-cleanup.sh` to reset and try again
 
-**Q: Blockchain sync very slow?**
-- A: Normal for initial sync (3-7 days). Check peers with `watch -n 30 'sudo journalctl -u zebrad -n 1 --no-pager | grep sync'`
+**Q: Blockchain sync very slow or monitor shows wrong sync status?**
+- A: Normal for initial sync (3-7 days). Monitor uses `sync_percent >= 99%` for accuracy. Check with `tail -f ~/.cache/zebrad.log | grep sync_percent`
 
 **Q: Can't access the node via domain?**
-- A: Ensure port forwarding is configured on your router (443 → localhost:443)
+- A: Ensure port forwarding is configured on your router (443 → localhost:443, 4242 → localhost:4242)
+
+**Q: Services not running after reboot?**
+- A: Run `sudo bash zebra-monitor.sh` - it auto-starts services. For persistence, add to crontab: `@reboot sudo bash /path/to/zebra-monitor.sh`
+
+**Q: Monitor shows extra output or formatting issues?**
+- A: Update to v1.3.17+ which fixes whitespace handling in network metrics
 
 **Q: Need to reconfigure donation address?**
 - A: Re-run `sudo bash zecnode-caddy-setup.sh` and press 'M' at the end to launch monitor
@@ -207,10 +220,11 @@ This project is open-source under MIT Lic. See LICENSE file for details.
 
 ---
 
-**Version: 1.3.14**  
-**Last Updated: November 6, 2025**
+**Version: 1.3.17**  
+**Last Updated: November 9, 2025**
 
 Welcome to the Zcash network! 🦓🔒
+
 
 
 
